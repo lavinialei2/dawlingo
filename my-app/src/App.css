@@ -52,3 +52,10 @@
   cursor: pointer;
   font-size: 14px;
 }
+
+.playground-button {
+  background-color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 9999px;
+}
