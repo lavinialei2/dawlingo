@@ -1,0 +1,22 @@
+body {
+    background-color: #EA97B5;
+}
+
+h1 {
+    text-align: center;
+  }
+
+.container{ 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.rectangle {
+    width: 1300px;
+    height: 650px;
+    background: #E7CEFF;
+    border-style: solid;
+    border-width: 2px;
+    border-color: black; 
+    border-radius: 15px;
+}
