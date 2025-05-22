@@ -1,0 +1,138 @@
+.dawlingo-light-pink {
+  background-color: #f9eff4;
+}
+
+.dawlingo-pink {
+  background-color: #d9468f;
+  opacity: 70%;
+}
+
+.bg-dawlingo-blue {
+  background-color: #33C3F0;
+}
+
+.text-white {
+  color: white;
+}
+
+.text-2xl {
+  font-size: 2rem;
+  line-height: 2rem;
+}
+
+.font-bold {
+  font-weight: bold;
+}
+
+.p-2 {
+  padding: 0.5rem;
+}
+
+.py-4 {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+.px-6 {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+.rounded-full {
+  border-radius: 9999px;
+}
+
+.transition-all {
+  transition: all 0.2s ease;
+}
+
+.hover\:bg-opacity-80:hover {
+  opacity: 0.8;
+}
+
+.min-h-screen {
+  min-height: 100vh;
+}
+
+.container {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.max-w-3xl {
+  max-width: 48rem;
+}
+
+.mx-auto {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.py-8 {
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+
+.px-4 {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.grid {
+  display: grid;
+}
+
+.grid-cols-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.sm\:grid-cols-3 {
+  /* fallback; needs media query if you want real responsive */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.md\:grid-cols-4 {
+  /* fallback; needs media query */
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.gap-4 {
+  gap: 1rem;
+}
+
+.pl-4 {
+  padding-left: 1rem;
+}
+
+.flex {
+  display: flex;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.gap-2 {
+  gap: 0.5rem;
+}
+
+.text-xs {
+  font-size: 0.75rem;
+}
+
+.font-medium {
+  font-weight: 500;
+}
+
+.opacity-70 {
+  opacity: 0.7;
+}

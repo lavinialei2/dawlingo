@@ -1,3 +1,5 @@
+<img src="/DAWlogo.png" width="400">
+
 # Interaction Flow 1 (Week 7)
 This week, we set up creating basic DAW features in a React app. Our first interaction flow is for users to explore adding tracks, recording clips, and adjusting the volumes of individual tracks.
 
