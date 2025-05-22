@@ -1,0 +1,68 @@
+.congrats-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+  }
+  
+  .congrats-modal {
+    position: relative;
+    background: transparent;
+    padding: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    max-width: 500px;
+    width: 90%;
+  }
+  
+  .close-button {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    background: transparent;
+    border: none;
+    font-size: 1.75rem;
+    font-weight: bold;
+    color: #555;
+    cursor: pointer;
+    z-index: 2;
+  }
+  
+  .image-wrapper {
+    position: relative;
+    width: 100%;
+    height: auto;
+  }
+  
+  .congrats-image {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+  
+  .home-button {
+    position: absolute;
+    bottom: 72px;
+    right: 16px;
+    background-color: #3fa9f5;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.85rem;
+    border-radius: 8px;
+    cursor: pointer;
+    z-index: 1;
+    transition: background-color 0.2s ease;
+  }
+  
+  
+  .home-button:hover {
+    background-color: #2c3e4f;
+  }
+  

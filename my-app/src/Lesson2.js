@@ -3,6 +3,9 @@ import TransportControls from "./components/TransportControls";
 import Timeline from "./components/Timeline";
 import * as Tone from "tone";
 import "./App.css";
+import CongratsModal from "./components/CongratsModal";
+import congratsImage from "./assets/lvl2complete.png";
+import { useNavigate } from "react-router-dom";
 
 export default function Lesson2({ unlockFeature }) {
   const [lessonComplete, setLessonComplete] = useState(false);
@@ -11,16 +14,19 @@ export default function Lesson2({ unlockFeature }) {
   const [selectedTrackId, setSelectedTrackId] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
   const [playheadPosition, setPlayheadPosition] = useState(0);
+  const navigate = useNavigate();
+  const [showCongrats, setShowCongrats] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem("lesson2Complete");
-    if (stored === "true") {
+    const stored = parseInt(localStorage.getItem("highestLessonCompleted") || "0", 10);
+    if (stored >= 2) {
       setLessonComplete(true);
       unlockFeature("compressor");
       unlockFeature("eq");
       unlockFeature("reverb");
     }
-  }, [unlockFeature]);
+  }, []);
+  
 
   useEffect(() => {
     let id;
@@ -40,13 +46,15 @@ export default function Lesson2({ unlockFeature }) {
     setLessonComplete(true);
     localStorage.setItem("lesson2Complete", "true");
   
-    // Update global lesson progression to lesson index 1 (zero-based index)
     const currentProgress = parseInt(localStorage.getItem("highestLessonCompleted") || "0");
     if (currentProgress < 2) {
       localStorage.setItem("highestLessonCompleted", "2");
     }
+  
+    setShowCongrats(true);
   };
   
+
 
   const onScrubPlayhead = (pos) => {
     Tone.Transport.seconds = pos;
@@ -58,11 +66,11 @@ export default function Lesson2({ unlockFeature }) {
       prev.map((t) =>
         t.id === trackId
           ? {
-              ...t,
-              clips: t.clips.map((clip, i) =>
-                i === clipIndex ? { ...clip, start: Math.max(0, newStart) } : clip
-              ),
-            }
+            ...t,
+            clips: t.clips.map((clip, i) =>
+              i === clipIndex ? { ...clip, start: Math.max(0, newStart) } : clip
+            ),
+          }
           : t
       )
     );
@@ -81,11 +89,11 @@ export default function Lesson2({ unlockFeature }) {
       prev.map((t) =>
         t.id === trackId
           ? {
-              ...t,
-              clips: t.clips.map((clip, i) =>
-                i === clipIndex ? { ...clip, volume } : clip
-              ),
-            }
+            ...t,
+            clips: t.clips.map((clip, i) =>
+              i === clipIndex ? { ...clip, volume } : clip
+            ),
+          }
           : t
       )
     );
@@ -234,6 +242,19 @@ export default function Lesson2({ unlockFeature }) {
           {lessonComplete ? "✅ Lesson Completed" : "Mark Lesson Complete"}
         </button>
       </div>
+      {showCongrats && (
+        <CongratsModal
+          image={congratsImage}
+          onClose={() => {
+            setShowCongrats(false);
+          }}
+          onReturnHome={() => {
+            setTimeout(() => {
+              navigate("/home");
+            }, 50);
+          }}
+        />
+      )}
     </div>
   );
 }

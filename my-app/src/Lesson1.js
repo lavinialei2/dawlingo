@@ -4,6 +4,10 @@ import Timeline from "./components/Timeline";
 import "./App.css";
 import * as Tone from "tone";
 import TrackList from "./components/TrackList";
+import CongratsModal from "./components/CongratsModal";
+import congratsImage from "./assets/lvl1complete.png";
+import { useNavigate } from "react-router-dom";
+
 
 export default function Lesson1({ onLessonComplete }) {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -12,6 +16,9 @@ export default function Lesson1({ onLessonComplete }) {
   const [isRecording, setIsRecording] = useState(false);
   const [playheadPosition, setPlayheadPosition] = useState(0);
   const [lessonComplete, setLessonComplete] = useState(false);
+  const navigate = useNavigate();
+  const [showCongrats, setShowCongrats] = useState(false);
+
 
   useEffect(() => {
     const completed = localStorage.getItem("lesson1Complete") === "true";
@@ -62,13 +69,13 @@ export default function Lesson1({ onLessonComplete }) {
       prev.map((t) =>
         t.id === trackId
           ? {
-              ...t,
-              clips: t.clips.map((clip, i) =>
-                i === clipIndex
-                  ? { ...clip, start: Math.max(0, newStart) }
-                  : clip
-              ),
-            }
+            ...t,
+            clips: t.clips.map((clip, i) =>
+              i === clipIndex
+                ? { ...clip, start: Math.max(0, newStart) }
+                : clip
+            ),
+          }
           : t
       )
     );
@@ -79,9 +86,9 @@ export default function Lesson1({ onLessonComplete }) {
       prev.map((t) =>
         t.id === trackId
           ? {
-              ...t,
-              clips: t.clips.filter((_, i) => i !== clipIndex),
-            }
+            ...t,
+            clips: t.clips.filter((_, i) => i !== clipIndex),
+          }
           : t
       )
     );
@@ -92,11 +99,11 @@ export default function Lesson1({ onLessonComplete }) {
       prev.map((t) =>
         t.id === trackId
           ? {
-              ...t,
-              clips: t.clips.map((clip, i) =>
-                i === clipIndex ? { ...clip, volume } : clip
-              ),
-            }
+            ...t,
+            clips: t.clips.map((clip, i) =>
+              i === clipIndex ? { ...clip, volume } : clip
+            ),
+          }
           : t
       )
     );
@@ -198,18 +205,20 @@ export default function Lesson1({ onLessonComplete }) {
 
   const handleLessonComplete = () => {
     const currentHighest = parseInt(localStorage.getItem("highestLessonCompleted") || "0");
-  
+
     // Lesson 1 is index 0
     if (currentHighest < 1) {
       localStorage.setItem("highestLessonCompleted", "1");
     }
-  
+
     setLessonComplete(true);
     localStorage.setItem("lesson1Complete", "true");
-  
+
     if (onLessonComplete) onLessonComplete("lesson1");
+
+    setShowCongrats(true);
   };
-  
+
 
   return (
     <div className="App">
@@ -265,6 +274,19 @@ export default function Lesson1({ onLessonComplete }) {
           {lessonComplete ? "✅ Lesson Completed" : "Mark Lesson Complete"}
         </button>
       </div>
+      {showCongrats && (
+        <CongratsModal
+          image={congratsImage}
+          onClose={() => {
+            setShowCongrats(false);
+          }}
+          onReturnHome={() => {
+            setTimeout(() => {
+              navigate("/home");
+            }, 50);
+          }}
+        />
+      )}
     </div>
   );
 }
