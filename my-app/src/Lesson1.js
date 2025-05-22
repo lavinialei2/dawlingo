@@ -1,24 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import TransportControls from "./components/TransportControls";
 import Timeline from "./components/Timeline";
 import "./App.css";
 import * as Tone from "tone";
 import TrackList from "./components/TrackList";
-import { useNavigate } from 'react-router-dom';
-import './Playground.css';
- 
-  const Playground = () => {
 
-  const navigate = useNavigate();
+export default function Lesson1() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [tracks, setTracks] = useState([]);
   const [selectedTrackId, setSelectedTrackId] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
   const [playheadPosition, setPlayheadPosition] = useState(0);
-  
-  const navigateToHome = () => {
-    navigate('/home');
-  };
 
   useEffect(() => {
     let id;
@@ -182,7 +174,6 @@ import './Playground.css';
       volume: 1,
     };
 
-    
     const player = new Tone.Player({
       url,
       autostart: false,
@@ -201,62 +192,53 @@ import './Playground.css';
   };
 
   return (
-    <>
-    <div className="playground-header">
-        <h2 className="playground-header-title">DAW Playground</h2>
-        <button className="home-button" onClick={navigateToHome}>Home</button>
-    </div>
-  <div className="playground-container">
-
-    <div className="playground-controls">
-        <TransportControls isPlaying={isPlaying} setIsPlaying={setIsPlaying} />
-
+    <div className="App">
+      <h1>Lesson 1: Track Controls</h1>
+      <TransportControls isPlaying={isPlaying} setIsPlaying={setIsPlaying} />
       <button onClick={addTrack}>Add Track</button>
 
-      <button
-        onClick={isRecording ? stopRecording : startRecording}
-        disabled={!selectedTrackId}
-      >
-        {isRecording ? "Stop Recording" : "Record"}
-      </button>
+      <div>
+        <button
+          onClick={isRecording ? stopRecording : startRecording}
+          disabled={!selectedTrackId}
+        >
+          {isRecording ? "Stop Recording" : "Record"}
+        </button>
+        <button
+          onClick={deleteSelectedTrack}
+          disabled={!selectedTrackId}
+          style={{ marginLeft: "8px" }}
+        >
+          Delete Track
+        </button>
+        <button onClick={() => onScrubPlayhead(0)}>Reset Playhead</button>
 
-      <button
-        onClick={deleteSelectedTrack}
-        disabled={!selectedTrackId}
-      >
-        Delete Track
-      </button>
+        <br></br>
+        <label>Playhead:</label>
+        <input
+          type="range"
+          min={0}
+          max={60}
+          step={0.1}
+          value={playheadPosition}
+          onChange={(e) => onScrubPlayhead(parseFloat(e.target.value))}
+          disabled={isPlaying}
+        />
+      </div>
 
-      <button onClick={() => onScrubPlayhead(0)}>Reset Playhead</button>
-
-      <label style={{ display: 'block', marginTop: '10px' }}>Playhead:</label>
-      <input
-        type="range"
-        min={0}
-        max={60}
-        step={0.1}
-        value={playheadPosition}
-        onChange={(e) => onScrubPlayhead(parseFloat(e.target.value))}
-        disabled={isPlaying}
+      <Timeline
+        tracks={tracks}
+        numBeats={16}
+        selectedTrackId={selectedTrackId}
+        onSelectTrack={handleTrackSelect}
+        playheadPosition={playheadPosition}
+        onMoveClip={onMoveClip}
+        onDeleteClip={onDeleteClip}
+        onSetClipVolume={onSetClipVolume}
+        onScrubPlayhead={onScrubPlayhead}
+        onVolumeChange={updateTrackVolume} // ✅ added here
+        onToggleMute={toggleMuteTrack} // ✅ added here
       />
     </div>
-
-    <Timeline
-      tracks={tracks}
-      numBeats={16}
-      selectedTrackId={selectedTrackId}
-      onSelectTrack={handleTrackSelect}
-      playheadPosition={playheadPosition}
-      onMoveClip={onMoveClip}
-      onDeleteClip={onDeleteClip}
-      onSetClipVolume={onSetClipVolume}
-      onScrubPlayhead={onScrubPlayhead}
-      onVolumeChange={updateTrackVolume}
-      onToggleMute={toggleMuteTrack}
-    />
-  </div>
-  </>
-);
-};
-
-export default Playground;
+  );
+}
