@@ -1,6 +1,8 @@
 import React, { useRef, useState, useEffect } from "react";
 const CONTROL_WIDTH = 160;
 const BEAT_WIDTH = 80;
+const TRACK_HEIGHT = 80;
+const GRID_HEIGHT = 24;
 export default function Timeline({
   tracks,
   numBeats,
@@ -58,7 +60,7 @@ export default function Timeline({
       <div
         style={{
           width: `${CONTROL_WIDTH}px`,
-          height: "24px",
+          height: GRID_HEIGHT,
           display: "inline-block",
         }}
       />
@@ -68,8 +70,9 @@ export default function Timeline({
         style={{
           width: `${numBeats * BEAT_WIDTH}px`,
           display: "flex",
-          height: "24px",
+          height: GRID_HEIGHT,
           borderBottom: "1px solid #555",
+          marginLeft: CONTROL_WIDTH,
         }}
         onClick={(e) => {
           const bounds = e.currentTarget.getBoundingClientRect();
@@ -107,8 +110,8 @@ export default function Timeline({
           }px`,
 
           width: "12px",
-          marginLeft: "-6px",
-          height: `${tracks.length * 40 + 24}px`,
+          marginLeft: "4px",
+          height: `${tracks.length * TRACK_HEIGHT + 3 * GRID_HEIGHT}px`,
           zIndex: 10,
           cursor: "ew-resize",
           pointerEvents: "auto",
@@ -131,7 +134,7 @@ export default function Timeline({
           key={track.id}
           style={{
             display: "flex",
-            height: "40px",
+            height: "80px",
             marginBottom: "4px",
             backgroundColor:
               track.id === selectedTrackId ? "#1a2a3a" : "#2a2a2a",
@@ -184,6 +187,7 @@ export default function Timeline({
             style={{
               position: "relative",
               flex: 1,
+              height: TRACK_HEIGHT,
             }}
             onClick={(e) => {
               e.stopPropagation();
@@ -217,7 +221,7 @@ export default function Timeline({
                   top: "2px",
                   left: `${(clip.start / numBeats) * 100}%`,
                   width: `${(clip.duration / numBeats) * 100}%`,
-                  height: "36px",
+                  height: TRACK_HEIGHT,
                   backgroundColor: track.muted ? "#888" : "#3fa9f5",
                   opacity: track.muted ? 0.5 : 1,
                   cursor: "grab",

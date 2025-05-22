@@ -14,6 +14,7 @@ function App() {
     eq: true,
   });
 
+
   // Function to unlock features (e.g., called when a lesson is completed)
   const unlockFeature = (featureKey) => {
     setFeatureLocks((prev) => ({ ...prev, [featureKey]: false }));
@@ -112,6 +113,7 @@ export default App;
 //         });
 //       }
 //     };
+
 
 //     window.addEventListener("keydown", handleKeyDown);
 //     return () => window.removeEventListener("keydown", handleKeyDown);
