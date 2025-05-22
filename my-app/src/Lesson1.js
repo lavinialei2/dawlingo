@@ -5,7 +5,7 @@ import "./App.css";
 import * as Tone from "tone";
 import TrackList from "./components/TrackList";
 
-function App() {
+export default function Lesson1() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [tracks, setTracks] = useState([]);
   const [selectedTrackId, setSelectedTrackId] = useState(null);
@@ -242,5 +242,3 @@ function App() {
     </div>
   );
 }
-
-export default App;

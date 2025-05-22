@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import TransportControls from "./components/TransportControls";
 import Timeline from "./components/Timeline";
-import "./App.css";
 import * as Tone from "tone";
-import TrackList from "./components/TrackList";
+import "./App.css";
 
-function App() {
+export default function Lesson2({ unlockFeature }) {
+  const [lessonComplete, setLessonComplete] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [tracks, setTracks] = useState([]);
   const [selectedTrackId, setSelectedTrackId] = useState(null);
@@ -13,43 +13,36 @@ function App() {
   const [playheadPosition, setPlayheadPosition] = useState(0);
 
   useEffect(() => {
+    const stored = localStorage.getItem("lesson2Complete");
+    if (stored === "true") {
+      setLessonComplete(true);
+      unlockFeature("compressor");
+      unlockFeature("eq");
+      unlockFeature("reverb");
+    }
+  }, [unlockFeature]);
+
+  useEffect(() => {
     let id;
     const update = () => {
       setPlayheadPosition(Tone.Transport.seconds);
       id = requestAnimationFrame(update);
     };
-
-    if (isPlaying) {
-      id = requestAnimationFrame(update);
-    }
-
+    if (isPlaying) id = requestAnimationFrame(update);
     return () => cancelAnimationFrame(id);
   }, [isPlaying]);
 
-  // Use space bar on keyboard to control play/pause
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.code === "Space") {
-        e.preventDefault(); // prevent page scroll
-        setIsPlaying((prev) => {
-          const newPlay = !prev;
-          if (newPlay) {
-            Tone.Transport.start();
-          } else {
-            Tone.Transport.pause();
-          }
-          return newPlay;
-        });
-      }
-    };
+  const handleLessonComplete = () => {
+    unlockFeature("compressor");
+    unlockFeature("eq");
+    unlockFeature("reverb");
+    setLessonComplete(true);
+    localStorage.setItem("lesson2Complete", "true");
+  };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
-
-  const onScrubPlayhead = (positionInSeconds) => {
-    Tone.Transport.seconds = positionInSeconds;
-    setPlayheadPosition(positionInSeconds);
+  const onScrubPlayhead = (pos) => {
+    Tone.Transport.seconds = pos;
+    setPlayheadPosition(pos);
   };
 
   const onMoveClip = (trackId, clipIndex, newStart) => {
@@ -59,9 +52,7 @@ function App() {
           ? {
               ...t,
               clips: t.clips.map((clip, i) =>
-                i === clipIndex
-                  ? { ...clip, start: Math.max(0, newStart) }
-                  : clip
+                i === clipIndex ? { ...clip, start: Math.max(0, newStart) } : clip
               ),
             }
           : t
@@ -72,12 +63,7 @@ function App() {
   const onDeleteClip = (trackId, clipIndex) => {
     setTracks((prev) =>
       prev.map((t) =>
-        t.id === trackId
-          ? {
-              ...t,
-              clips: t.clips.filter((_, i) => i !== clipIndex),
-            }
-          : t
+        t.id === trackId ? { ...t, clips: t.clips.filter((_, i) => i !== clipIndex) } : t
       )
     );
   };
@@ -125,7 +111,7 @@ function App() {
         if (t.id !== id) return t;
         const newMuted = !t.muted;
         if (t.gainNode) t.gainNode.gain.value = newMuted ? 0 : t.volume;
-        return { ...t, muted: !t.muted };
+        return { ...t, muted: newMuted };
       })
     );
   };
@@ -153,11 +139,9 @@ function App() {
     await Tone.start();
     const mic = new Tone.UserMedia();
     await mic.open();
-
     const rec = new Tone.Recorder();
     mic.connect(rec);
     rec.start();
-
     setIsRecording({ mic, rec, startTime: Tone.Transport.seconds });
   };
 
@@ -166,14 +150,12 @@ function App() {
     const recording = await isRecording.rec.stop();
     const blob = new Blob([recording], { type: "audio/wav" });
     const url = URL.createObjectURL(blob);
-
     const clip = {
       url,
       start: isRecording.startTime,
       duration: 0,
       volume: 1,
     };
-
     const player = new Tone.Player({
       url,
       autostart: false,
@@ -187,16 +169,14 @@ function App() {
         setIsRecording(false);
       },
     });
-
     isRecording.mic.disconnect();
   };
 
   return (
     <div className="App">
-      <h1>Lesson 1: Track Controls</h1>
+      <h1>Lesson 2: Intro to Audio Effects</h1>
       <TransportControls isPlaying={isPlaying} setIsPlaying={setIsPlaying} />
       <button onClick={addTrack}>Add Track</button>
-
       <div>
         <button
           onClick={isRecording ? stopRecording : startRecording}
@@ -212,8 +192,7 @@ function App() {
           Delete Track
         </button>
         <button onClick={() => onScrubPlayhead(0)}>Reset Playhead</button>
-
-        <br></br>
+        <br />
         <label>Playhead:</label>
         <input
           type="range"
@@ -225,7 +204,6 @@ function App() {
           disabled={isPlaying}
         />
       </div>
-
       <Timeline
         tracks={tracks}
         numBeats={16}
@@ -236,11 +214,18 @@ function App() {
         onDeleteClip={onDeleteClip}
         onSetClipVolume={onSetClipVolume}
         onScrubPlayhead={onScrubPlayhead}
-        onVolumeChange={updateTrackVolume} // ✅ added here
-        onToggleMute={toggleMuteTrack} // ✅ added here
+        onVolumeChange={updateTrackVolume}
+        onToggleMute={toggleMuteTrack}
+        isRecording={isRecording}
       />
+      <div style={{ position: "fixed", bottom: "20px" }}>
+        <button
+          onClick={handleLessonComplete}
+          disabled={lessonComplete}
+        >
+          {lessonComplete ? "✅ Lesson Completed" : "Mark Lesson Complete"}
+        </button>
+      </div>
     </div>
   );
 }
-
-export default App;

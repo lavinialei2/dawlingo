@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from "react";
 import TransportControls from "./components/TransportControls";
 import Timeline from "./components/Timeline";
-import "./App.css";
 import * as Tone from "tone";
-import TrackList from "./components/TrackList";
+import "./App.css";
 
-function App() {
+export default function Playground({ featureLocks}) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [tracks, setTracks] = useState([]);
   const [selectedTrackId, setSelectedTrackId] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
   const [playheadPosition, setPlayheadPosition] = useState(0);
+  const [showCompressor, setShowCompressor] = useState(false);
+  const [showEQ, setShowEQ] = useState(false);
+  const [showReverb, setShowReverb] = useState(false);
 
   useEffect(() => {
     let id;
@@ -18,38 +20,13 @@ function App() {
       setPlayheadPosition(Tone.Transport.seconds);
       id = requestAnimationFrame(update);
     };
-
-    if (isPlaying) {
-      id = requestAnimationFrame(update);
-    }
-
+    if (isPlaying) id = requestAnimationFrame(update);
     return () => cancelAnimationFrame(id);
   }, [isPlaying]);
 
-  // Use space bar on keyboard to control play/pause
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.code === "Space") {
-        e.preventDefault(); // prevent page scroll
-        setIsPlaying((prev) => {
-          const newPlay = !prev;
-          if (newPlay) {
-            Tone.Transport.start();
-          } else {
-            Tone.Transport.pause();
-          }
-          return newPlay;
-        });
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
-
-  const onScrubPlayhead = (positionInSeconds) => {
-    Tone.Transport.seconds = positionInSeconds;
-    setPlayheadPosition(positionInSeconds);
+  const onScrubPlayhead = (pos) => {
+    Tone.Transport.seconds = pos;
+    setPlayheadPosition(pos);
   };
 
   const onMoveClip = (trackId, clipIndex, newStart) => {
@@ -57,13 +34,11 @@ function App() {
       prev.map((t) =>
         t.id === trackId
           ? {
-              ...t,
-              clips: t.clips.map((clip, i) =>
-                i === clipIndex
-                  ? { ...clip, start: Math.max(0, newStart) }
-                  : clip
-              ),
-            }
+            ...t,
+            clips: t.clips.map((clip, i) =>
+              i === clipIndex ? { ...clip, start: Math.max(0, newStart) } : clip
+            ),
+          }
           : t
       )
     );
@@ -72,12 +47,7 @@ function App() {
   const onDeleteClip = (trackId, clipIndex) => {
     setTracks((prev) =>
       prev.map((t) =>
-        t.id === trackId
-          ? {
-              ...t,
-              clips: t.clips.filter((_, i) => i !== clipIndex),
-            }
-          : t
+        t.id === trackId ? { ...t, clips: t.clips.filter((_, i) => i !== clipIndex) } : t
       )
     );
   };
@@ -87,11 +57,11 @@ function App() {
       prev.map((t) =>
         t.id === trackId
           ? {
-              ...t,
-              clips: t.clips.map((clip, i) =>
-                i === clipIndex ? { ...clip, volume } : clip
-              ),
-            }
+            ...t,
+            clips: t.clips.map((clip, i) =>
+              i === clipIndex ? { ...clip, volume } : clip
+            ),
+          }
           : t
       )
     );
@@ -125,7 +95,7 @@ function App() {
         if (t.id !== id) return t;
         const newMuted = !t.muted;
         if (t.gainNode) t.gainNode.gain.value = newMuted ? 0 : t.volume;
-        return { ...t, muted: !t.muted };
+        return { ...t, muted: newMuted };
       })
     );
   };
@@ -153,11 +123,9 @@ function App() {
     await Tone.start();
     const mic = new Tone.UserMedia();
     await mic.open();
-
     const rec = new Tone.Recorder();
     mic.connect(rec);
     rec.start();
-
     setIsRecording({ mic, rec, startTime: Tone.Transport.seconds });
   };
 
@@ -166,14 +134,12 @@ function App() {
     const recording = await isRecording.rec.stop();
     const blob = new Blob([recording], { type: "audio/wav" });
     const url = URL.createObjectURL(blob);
-
     const clip = {
       url,
       start: isRecording.startTime,
       duration: 0,
       volume: 1,
     };
-
     const player = new Tone.Player({
       url,
       autostart: false,
@@ -187,16 +153,33 @@ function App() {
         setIsRecording(false);
       },
     });
-
     isRecording.mic.disconnect();
   };
 
+  const renderEffectButton = (label, isLocked, onClick) => (
+    <div style={{ marginBottom: "1rem" }}>
+      <h3>{label}</h3>
+      <button
+        disabled={isLocked}
+        onClick={onClick}
+        style={{
+          padding: "0.5rem 1rem",
+          background: isLocked ? "#777" : "#3fa9f5",
+          color: "white",
+          border: "none",
+          cursor: isLocked ? "not-allowed" : "pointer",
+        }}
+      >
+        {isLocked ? "Locked 🔒" : `Launch ${label}`}
+      </button>
+    </div>
+  );
+
   return (
     <div className="App">
-      <h1>Lesson 1: Track Controls</h1>
+      <h1>🎛 Playground</h1>
       <TransportControls isPlaying={isPlaying} setIsPlaying={setIsPlaying} />
       <button onClick={addTrack}>Add Track</button>
-
       <div>
         <button
           onClick={isRecording ? stopRecording : startRecording}
@@ -212,8 +195,7 @@ function App() {
           Delete Track
         </button>
         <button onClick={() => onScrubPlayhead(0)}>Reset Playhead</button>
-
-        <br></br>
+        <br />
         <label>Playhead:</label>
         <input
           type="range"
@@ -226,6 +208,33 @@ function App() {
         />
       </div>
 
+      <div style={{ marginTop: "2rem" }}>
+        {renderEffectButton("Compressor", featureLocks.compressor, () => setShowCompressor(true))}
+        {renderEffectButton("EQ", featureLocks.eq, () => setShowEQ(true))}
+        {renderEffectButton("Reverb", featureLocks.reverb, () => setShowReverb(true))}
+
+        {showCompressor && !featureLocks.compressor && (
+          <div style={{ border: "1px solid white", padding: "1rem", background: "#111" }}>
+            <p>This is a placeholder for a Tone.js compressor.</p>
+            <button onClick={() => setShowCompressor(false)}>Close</button>
+          </div>
+        )}
+
+        {showEQ && !featureLocks.eq && (
+          <div style={{ border: "1px solid white", padding: "1rem", background: "#111" }}>
+            <p>This is a placeholder for a Tone.js EQ.</p>
+            <button onClick={() => setShowEQ(false)}>Close</button>
+          </div>
+        )}
+
+        {showReverb && !featureLocks.reverb && (
+          <div style={{ border: "1px solid white", padding: "1rem", background: "#111" }}>
+            <p>This is a placeholder for a Tone.js Reverb.</p>
+            <button onClick={() => setShowReverb(false)}>Close</button>
+          </div>
+        )}
+      </div>
+
       <Timeline
         tracks={tracks}
         numBeats={16}
@@ -236,11 +245,10 @@ function App() {
         onDeleteClip={onDeleteClip}
         onSetClipVolume={onSetClipVolume}
         onScrubPlayhead={onScrubPlayhead}
-        onVolumeChange={updateTrackVolume} // ✅ added here
-        onToggleMute={toggleMuteTrack} // ✅ added here
+        onVolumeChange={updateTrackVolume}
+        onToggleMute={toggleMuteTrack}
+        isRecording={isRecording}
       />
     </div>
   );
 }
-
-export default App;
