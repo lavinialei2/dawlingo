@@ -11,6 +11,17 @@ export default function Lesson2({ unlockFeature }) {
   const [selectedTrackId, setSelectedTrackId] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
   const [playheadPosition, setPlayheadPosition] = useState(0);
+  const [tempo, setTempo] = useState(120);
+  const baseTempo = 120;
+  const playbackRate = tempo / baseTempo;
+  const [players, setPlayers] = useState([]);
+
+  useEffect(() => {
+    const newRate = tempo / baseTempo;
+    players.forEach((p) => {
+      p.playbackRate = newRate;
+    });
+  }, [tempo, players]);
 
   useEffect(() => {
     const stored = localStorage.getItem("lesson2Complete");
@@ -52,7 +63,9 @@ export default function Lesson2({ unlockFeature }) {
           ? {
               ...t,
               clips: t.clips.map((clip, i) =>
-                i === clipIndex ? { ...clip, start: Math.max(0, newStart) } : clip
+                i === clipIndex
+                  ? { ...clip, start: Math.max(0, newStart) }
+                  : clip
               ),
             }
           : t
@@ -63,7 +76,9 @@ export default function Lesson2({ unlockFeature }) {
   const onDeleteClip = (trackId, clipIndex) => {
     setTracks((prev) =>
       prev.map((t) =>
-        t.id === trackId ? { ...t, clips: t.clips.filter((_, i) => i !== clipIndex) } : t
+        t.id === trackId
+          ? { ...t, clips: t.clips.filter((_, i) => i !== clipIndex) }
+          : t
       )
     );
   };
@@ -163,12 +178,16 @@ export default function Lesson2({ unlockFeature }) {
         clip.duration = player.buffer.duration;
         const track = tracks.find((t) => t.id === selectedTrackId);
         if (!track) return;
+        player.playbackRate = playbackRate;
         player.connect(track.gainNode);
         player.sync().start(clip.start);
         updateTrackClip(selectedTrackId, clip);
+        setPlayers((prev) => [...prev, player]);
+
         setIsRecording(false);
       },
     });
+
     isRecording.mic.disconnect();
   };
 
@@ -204,6 +223,17 @@ export default function Lesson2({ unlockFeature }) {
           disabled={isPlaying}
         />
       </div>
+      <div style={{ marginTop: "8px" }}>
+        <label>Tempo: {tempo} BPM</label>
+        <input
+          type="range"
+          min="60"
+          max="180"
+          step="1"
+          value={tempo}
+          onChange={(e) => setTempo(Number(e.target.value))}
+        />
+      </div>
       <Timeline
         tracks={tracks}
         numBeats={16}
@@ -219,10 +249,7 @@ export default function Lesson2({ unlockFeature }) {
         isRecording={isRecording}
       />
       <div style={{ position: "fixed", bottom: "20px" }}>
-        <button
-          onClick={handleLessonComplete}
-          disabled={lessonComplete}
-        >
+        <button onClick={handleLessonComplete} disabled={lessonComplete}>
           {lessonComplete ? "✅ Lesson Completed" : "Mark Lesson Complete"}
         </button>
       </div>
