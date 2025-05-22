@@ -82,7 +82,7 @@ import { ReactComponent as Playground } from './assets/Playground.svg';
           className="bg-dawlingo-light-pink rounded-full p-2 hover:bg-opacity-80 transition-all"
           aria-label="Go to playground"
         >
-          <Playground width={80} height={80} />
+          <Playground width={80} height={80} fill="white" />
         </playground-button>
       </header>
         
