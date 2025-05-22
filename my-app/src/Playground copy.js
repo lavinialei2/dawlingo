@@ -1,15 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import TransportControls from "./components/TransportControls";
 import Timeline from "./components/Timeline";
-import "./App.css";
 import * as Tone from "tone";
-import TrackList from "./components/TrackList";
-import { useNavigate } from 'react-router-dom';
-import './Playground.css';
+import "./App.css";
 
-const Playground = ({ featureLocks }) => {
-
-  const navigate = useNavigate();
+export default function Playground({ featureLocks}) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [tracks, setTracks] = useState([]);
   const [selectedTrackId, setSelectedTrackId] = useState(null);
@@ -19,48 +14,19 @@ const Playground = ({ featureLocks }) => {
   const [showEQ, setShowEQ] = useState(false);
   const [showReverb, setShowReverb] = useState(false);
 
-  const navigateToHome = () => {
-    navigate('/home');
-  };
-
   useEffect(() => {
     let id;
     const update = () => {
       setPlayheadPosition(Tone.Transport.seconds);
       id = requestAnimationFrame(update);
     };
-
-    if (isPlaying) {
-      id = requestAnimationFrame(update);
-    }
-
+    if (isPlaying) id = requestAnimationFrame(update);
     return () => cancelAnimationFrame(id);
   }, [isPlaying]);
 
-  // Use space bar on keyboard to control play/pause
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.code === "Space") {
-        e.preventDefault(); // prevent page scroll
-        setIsPlaying((prev) => {
-          const newPlay = !prev;
-          if (newPlay) {
-            Tone.Transport.start();
-          } else {
-            Tone.Transport.pause();
-          }
-          return newPlay;
-        });
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
-
-  const onScrubPlayhead = (positionInSeconds) => {
-    Tone.Transport.seconds = positionInSeconds;
-    setPlayheadPosition(positionInSeconds);
+  const onScrubPlayhead = (pos) => {
+    Tone.Transport.seconds = pos;
+    setPlayheadPosition(pos);
   };
 
   const onMoveClip = (trackId, clipIndex, newStart) => {
@@ -70,9 +36,7 @@ const Playground = ({ featureLocks }) => {
           ? {
             ...t,
             clips: t.clips.map((clip, i) =>
-              i === clipIndex
-                ? { ...clip, start: Math.max(0, newStart) }
-                : clip
+              i === clipIndex ? { ...clip, start: Math.max(0, newStart) } : clip
             ),
           }
           : t
@@ -83,12 +47,7 @@ const Playground = ({ featureLocks }) => {
   const onDeleteClip = (trackId, clipIndex) => {
     setTracks((prev) =>
       prev.map((t) =>
-        t.id === trackId
-          ? {
-            ...t,
-            clips: t.clips.filter((_, i) => i !== clipIndex),
-          }
-          : t
+        t.id === trackId ? { ...t, clips: t.clips.filter((_, i) => i !== clipIndex) } : t
       )
     );
   };
@@ -136,7 +95,7 @@ const Playground = ({ featureLocks }) => {
         if (t.id !== id) return t;
         const newMuted = !t.muted;
         if (t.gainNode) t.gainNode.gain.value = newMuted ? 0 : t.volume;
-        return { ...t, muted: !t.muted };
+        return { ...t, muted: newMuted };
       })
     );
   };
@@ -164,11 +123,9 @@ const Playground = ({ featureLocks }) => {
     await Tone.start();
     const mic = new Tone.UserMedia();
     await mic.open();
-
     const rec = new Tone.Recorder();
     mic.connect(rec);
     rec.start();
-
     setIsRecording({ mic, rec, startTime: Tone.Transport.seconds });
   };
 
@@ -177,15 +134,12 @@ const Playground = ({ featureLocks }) => {
     const recording = await isRecording.rec.stop();
     const blob = new Blob([recording], { type: "audio/wav" });
     const url = URL.createObjectURL(blob);
-
     const clip = {
       url,
       start: isRecording.startTime,
       duration: 0,
       volume: 1,
     };
-
-
     const player = new Tone.Player({
       url,
       autostart: false,
@@ -199,7 +153,6 @@ const Playground = ({ featureLocks }) => {
         setIsRecording(false);
       },
     });
-
     isRecording.mic.disconnect();
   };
 
@@ -223,60 +176,39 @@ const Playground = ({ featureLocks }) => {
   );
 
   return (
-    <>
-      <div className="playground-header">
-        <h2 className="playground-header-title">DAW Playground</h2>
-        <button className="home-button" onClick={navigateToHome}>Home</button>
-      </div>
-      <div className="playground-container">
-
-        <div className="playground-controls">
-          <TransportControls isPlaying={isPlaying} setIsPlaying={setIsPlaying} />
-
-          <button onClick={addTrack}>Add Track</button>
-
-          <button
-            onClick={isRecording ? stopRecording : startRecording}
-            disabled={!selectedTrackId}
-          >
-            {isRecording ? "Stop Recording" : "Record"}
-          </button>
-
-          <button
-            onClick={deleteSelectedTrack}
-            disabled={!selectedTrackId}
-          >
-            Delete Track
-          </button>
-
-          <button onClick={() => onScrubPlayhead(0)}>Reset Playhead</button>
-
-          <label style={{ display: 'block', marginTop: '10px' }}>Playhead:</label>
-          <input
-            type="range"
-            min={0}
-            max={60}
-            step={0.1}
-            value={playheadPosition}
-            onChange={(e) => onScrubPlayhead(parseFloat(e.target.value))}
-            disabled={isPlaying}
-          />
-        </div>
-
-        <Timeline
-          tracks={tracks}
-          numBeats={16}
-          selectedTrackId={selectedTrackId}
-          onSelectTrack={handleTrackSelect}
-          playheadPosition={playheadPosition}
-          onMoveClip={onMoveClip}
-          onDeleteClip={onDeleteClip}
-          onSetClipVolume={onSetClipVolume}
-          onScrubPlayhead={onScrubPlayhead}
-          onVolumeChange={updateTrackVolume}
-          onToggleMute={toggleMuteTrack}
+    <div className="App">
+      <h1>🎛 Playground</h1>
+      <TransportControls isPlaying={isPlaying} setIsPlaying={setIsPlaying} />
+      <button onClick={addTrack}>Add Track</button>
+      <div>
+        <button
+          onClick={isRecording ? stopRecording : startRecording}
+          disabled={!selectedTrackId}
+        >
+          {isRecording ? "Stop Recording" : "Record"}
+        </button>
+        <button
+          onClick={deleteSelectedTrack}
+          disabled={!selectedTrackId}
+          style={{ marginLeft: "8px" }}
+        >
+          Delete Track
+        </button>
+        <button onClick={() => onScrubPlayhead(0)}>Reset Playhead</button>
+        <br />
+        <label>Playhead:</label>
+        <input
+          type="range"
+          min={0}
+          max={60}
+          step={0.1}
+          value={playheadPosition}
+          onChange={(e) => onScrubPlayhead(parseFloat(e.target.value))}
+          disabled={isPlaying}
         />
-        <div style={{ marginTop: "2rem" }}>
+      </div>
+
+      <div style={{ marginTop: "2rem" }}>
         {renderEffectButton("Compressor", featureLocks.compressor, () => setShowCompressor(true))}
         {renderEffectButton("EQ", featureLocks.eq, () => setShowEQ(true))}
         {renderEffectButton("Reverb", featureLocks.reverb, () => setShowReverb(true))}
@@ -302,9 +234,21 @@ const Playground = ({ featureLocks }) => {
           </div>
         )}
       </div>
-      </div>
-    </>
-  );
-};
 
-export default Playground;
+      <Timeline
+        tracks={tracks}
+        numBeats={16}
+        selectedTrackId={selectedTrackId}
+        onSelectTrack={handleTrackSelect}
+        playheadPosition={playheadPosition}
+        onMoveClip={onMoveClip}
+        onDeleteClip={onDeleteClip}
+        onSetClipVolume={onSetClipVolume}
+        onScrubPlayhead={onScrubPlayhead}
+        onVolumeChange={updateTrackVolume}
+        onToggleMute={toggleMuteTrack}
+        isRecording={isRecording}
+      />
+    </div>
+  );
+}

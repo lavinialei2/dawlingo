@@ -1,28 +1,79 @@
-import React, { useState, useEffect } from "react";
-import TransportControls from "./components/TransportControls";
-import Timeline from "./components/Timeline";
-import "./App.css";
-import * as Tone from "tone";
-import TrackList from "./components/TrackList";
-
-import LessonTooltip from "./components/LessonTooltip.js";
-import lessons from "./Lessons";
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Home from './Home'; 
-import Playground from './Playground';
+// core state & routing framework for locking/unlocking features
+import React, { useState } from "react";
+import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import Home from './Home';
+import Playground from "./Playground";
+import Lesson1 from "./Lesson1";
+import Lesson2 from "./Lesson2";
 
 function App() {
+  // Global progress state
+  const [featureLocks, setFeatureLocks] = useState({
+    compressor: true, // true means locked
+    reverb: true,
+    eq: true,
+  });
+
+  // Function to unlock features (e.g., called when a lesson is completed)
+  const unlockFeature = (featureKey) => {
+    setFeatureLocks((prev) => ({ ...prev, [featureKey]: false }));
+  };
+
   return (
     <Router>
+      {/* <nav style={{ padding: "1rem", background: "#222", color: "white" }}>
+        <Link to="/lesson1" style={{ marginRight: "1rem", color: "#61dafb" }}>Lesson 1</Link>
+        <Link to="/lesson2" style={{ marginRight: "1rem", color: "#61dafb" }}>Lesson 2</Link>
+        <Link to="/playground" style={{ color: "#61dafb" }}>Playground</Link>
+      </nav> */}
+
       <Routes>
         <Route path="/home" element={<Home />} />
-        <Route path="/playground" element={<Playground />} />
+        <Route
+          path="/lesson1"
+          element={<Lesson1 unlockFeature={unlockFeature} featureLocks={featureLocks} />}
+        />
+        <Route
+          path="/lesson2"
+          element={<Lesson2 unlockFeature={unlockFeature} featureLocks={featureLocks} />}
+        />
+        <Route
+          path="/playground"
+          element={<Playground featureLocks={featureLocks} />}
+        />
       </Routes>
     </Router>
   );
 }
 
 export default App;
+
+
+// import React, { useState, useEffect } from "react";
+// import TransportControls from "./components/TransportControls";
+// import Timeline from "./components/Timeline";
+// import "./App.css";
+// import * as Tone from "tone";
+// import TrackList from "./components/TrackList";
+
+// import LessonTooltip from "./components/LessonTooltip.js";
+// import lessons from "./Lessons";
+// import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+// import Home from './Home'; 
+// import Playground from './Playground';
+
+// function App() {
+//   return (
+//     <Router>
+//       <Routes>
+//         <Route path="/home" element={<Home />} />
+//         <Route path="/playground" element={<Playground />} />
+//       </Routes>
+//     </Router>
+//   );
+// }
+
+// export default App;
 
 // function App() {
 //   const [isPlaying, setIsPlaying] = useState(false);

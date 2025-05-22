@@ -47,7 +47,7 @@ import { ReactComponent as Playground } from './assets/Playground.svg';
   };
 
   const navigateToLesson = () => {
-    navigate('/lesson');
+    navigate('/lesson2');
   };
 
   const getAchievementDetails = () => {
