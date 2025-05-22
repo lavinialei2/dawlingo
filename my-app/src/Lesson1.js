@@ -5,12 +5,18 @@ import "./App.css";
 import * as Tone from "tone";
 import TrackList from "./components/TrackList";
 
-export default function Lesson1() {
+export default function Lesson1({ onLessonComplete }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [tracks, setTracks] = useState([]);
   const [selectedTrackId, setSelectedTrackId] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
   const [playheadPosition, setPlayheadPosition] = useState(0);
+  const [lessonComplete, setLessonComplete] = useState(false);
+
+  useEffect(() => {
+    const completed = localStorage.getItem("lesson1Complete") === "true";
+    setLessonComplete(completed);
+  }, []);
 
   useEffect(() => {
     let id;
@@ -26,11 +32,10 @@ export default function Lesson1() {
     return () => cancelAnimationFrame(id);
   }, [isPlaying]);
 
-  // Use space bar on keyboard to control play/pause
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.code === "Space") {
-        e.preventDefault(); // prevent page scroll
+        e.preventDefault();
         setIsPlaying((prev) => {
           const newPlay = !prev;
           if (newPlay) {
@@ -191,6 +196,21 @@ export default function Lesson1() {
     isRecording.mic.disconnect();
   };
 
+  const handleLessonComplete = () => {
+    const currentHighest = parseInt(localStorage.getItem("highestLessonCompleted") || "0");
+  
+    // Lesson 1 is index 0
+    if (currentHighest < 1) {
+      localStorage.setItem("highestLessonCompleted", "1");
+    }
+  
+    setLessonComplete(true);
+    localStorage.setItem("lesson1Complete", "true");
+  
+    if (onLessonComplete) onLessonComplete("lesson1");
+  };
+  
+
   return (
     <div className="App">
       <h1>Lesson 1: Track Controls</h1>
@@ -213,7 +233,7 @@ export default function Lesson1() {
         </button>
         <button onClick={() => onScrubPlayhead(0)}>Reset Playhead</button>
 
-        <br></br>
+        <br />
         <label>Playhead:</label>
         <input
           type="range"
@@ -236,9 +256,15 @@ export default function Lesson1() {
         onDeleteClip={onDeleteClip}
         onSetClipVolume={onSetClipVolume}
         onScrubPlayhead={onScrubPlayhead}
-        onVolumeChange={updateTrackVolume} // ✅ added here
-        onToggleMute={toggleMuteTrack} // ✅ added here
+        onVolumeChange={updateTrackVolume}
+        onToggleMute={toggleMuteTrack}
       />
+
+      <div style={{ position: "fixed", bottom: "20px" }}>
+        <button onClick={handleLessonComplete} disabled={lessonComplete}>
+          {lessonComplete ? "✅ Lesson Completed" : "Mark Lesson Complete"}
+        </button>
+      </div>
     </div>
   );
 }

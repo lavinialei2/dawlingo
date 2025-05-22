@@ -36,9 +36,17 @@ export default function Lesson2({ unlockFeature }) {
     unlockFeature("compressor");
     unlockFeature("eq");
     unlockFeature("reverb");
+  
     setLessonComplete(true);
     localStorage.setItem("lesson2Complete", "true");
+  
+    // Update global lesson progression to lesson index 1 (zero-based index)
+    const currentProgress = parseInt(localStorage.getItem("highestLessonCompleted") || "0");
+    if (currentProgress < 2) {
+      localStorage.setItem("highestLessonCompleted", "2");
+    }
   };
+  
 
   const onScrubPlayhead = (pos) => {
     Tone.Transport.seconds = pos;
