@@ -40,8 +40,8 @@
   margin-top: 20px;
 }
 
-.playground-controls button:hover {
-  background-color: #666;
+.playground-controls button:not(:disabled):hover {
+  transform: scale(1.05);
 }
 
 .playground-controls button:disabled {
@@ -71,5 +71,5 @@ input[type='range'] {
 }
 
 .home-button:hover {
-  background-color: #666;
+  transform: scale(1.05);
 }
