@@ -7,18 +7,36 @@ import TrackList from "./components/TrackList";
 import CongratsModal from "./components/CongratsModal";
 import congratsImage from "./assets/lvl1complete.png";
 import { useNavigate } from "react-router-dom";
-
+import './Playground.css';
+import './Lessons.css'
+import lessons from './Lessons';
 
 export default function Lesson1({ onLessonComplete }) {
+  const navigate = useNavigate();
   const [isPlaying, setIsPlaying] = useState(false);
   const [tracks, setTracks] = useState([]);
   const [selectedTrackId, setSelectedTrackId] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
   const [playheadPosition, setPlayheadPosition] = useState(0);
   const [lessonComplete, setLessonComplete] = useState(false);
-  const navigate = useNavigate();
   const [showCongrats, setShowCongrats] = useState(false);
 
+  const lesson = lessons[0].steps;
+  const [stepIndex, setStepIndex] = useState(0);
+  const isLastStep = stepIndex === lesson.length - 1;
+
+  const [currentStep, setCurrentStep] = useState(0);
+  const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0 });
+
+
+
+  const navigateToHome = () => {
+    navigate('/home');
+  };
+
+  const navigateToPlayground = () => {
+    navigate('/playground')
+  };
 
   useEffect(() => {
     const completed = localStorage.getItem("lesson1Complete") === "true";
@@ -221,12 +239,50 @@ export default function Lesson1({ onLessonComplete }) {
 
 
   return (
-    <div className="App">
-      <h1>Lesson 1: Track Controls</h1>
-      <TransportControls isPlaying={isPlaying} setIsPlaying={setIsPlaying} />
-      <button onClick={addTrack}>Add Track</button>
+    <>
+    {stepIndex < lesson.length && (
+  <div
+    className={`lesson-popup 
+      ${lesson[stepIndex].hasArrow ? "with-arrow" : ""}
+      ${(stepIndex === 6 | stepIndex === 7 | stepIndex === 9) ? "arrow-left" : "arrow-center"}`}
+    style={{
+      position: "absolute",
+      top: lesson[stepIndex].position.top,
+      left: lesson[stepIndex].position.left,
+      transform: "translate(-50%, -100%)",
+    }}
+  >
+    <h4>{lesson[stepIndex].title}</h4>
+    <p>{lesson[stepIndex].text}</p>
+    {/* <button className="lesson-button" onClick={() => setStepIndex(stepIndex + 1)}>Next</button> */}
+    {isLastStep ? (
+      <button
+        className="lesson-button"
+        onClick={handleLessonComplete}
+        // disabled={lessonComplete}
+      >
+        {"Complete Lesson"}
+      </button>
+    ) : (
+      <button
+        className="lesson-button"
+        onClick={() => setStepIndex(stepIndex + 1)}
+      >Next
+      </button>
+    )}
 
-      <div>
+  </div>
+)}
+
+    <div className="playground-header">
+        <h2 className="playground-header-title">Lesson 1: Intro to the DAW</h2>
+        <button className="home-button" onClick={navigateToHome}>Home</button>
+      </div>
+    <div className="playground-container">
+
+      <div className="playground-controls">
+        <TransportControls isPlaying={isPlaying} setIsPlaying={setIsPlaying} />
+      <button onClick={addTrack}>Add Track</button>
         <button
           onClick={isRecording ? stopRecording : startRecording}
           disabled={!selectedTrackId}
@@ -268,12 +324,6 @@ export default function Lesson1({ onLessonComplete }) {
         onVolumeChange={updateTrackVolume}
         onToggleMute={toggleMuteTrack}
       />
-
-      <div style={{ position: "fixed", bottom: "20px" }}>
-        <button onClick={handleLessonComplete} disabled={lessonComplete}>
-          {lessonComplete ? "✅ Lesson Completed" : "Mark Lesson Complete"}
-        </button>
-      </div>
       {showCongrats && (
         <CongratsModal
           image={congratsImage}
@@ -288,5 +338,7 @@ export default function Lesson1({ onLessonComplete }) {
         />
       )}
     </div>
+  </>
+  
   );
 }

@@ -6,11 +6,15 @@ import ToolButton from './components/ToolButton'
 import levels from './Levels'
 import './Home.css';
 import './components/ToolButton.css'
+import UnavailableLessonModal from "./components/UnavailableLessonModal";
+import unavailableLesson from "./assets/unavailable.png";
 import { ReactComponent as Playground } from './assets/Playground.svg';
+
 
 const Home = () => {
   const navigate = useNavigate();
-
+  const [showUnavailable, setShowUnavailable] = useState(false);
+  const [showPlaygroundIntro, setShowPlaygroundIntro] = useState(false);
   const [highestLessonCompleted, setHighestLessonCompleted] = useState(0);
 
   useEffect(() => {
@@ -19,11 +23,13 @@ const Home = () => {
   }, []);
 
   const navigateToPlayground = () => {
+    localStorage.setItem("showPlaygroundIntro", "true");
     navigate('/playground');
   };
 
   const navigateToLesson = (lessonIndex) => {
-    navigate(`/lesson${lessonIndex + 1}`);
+    // temp logic: only allow to click on first lesson !!
+    lessonIndex > 0 ? setShowUnavailable(true) : navigate(`/lesson${lessonIndex + 1}`);
   };
 
   return (
@@ -75,6 +81,14 @@ const Home = () => {
           ))}
         </div>
       </main>
+            {showUnavailable && (
+        <UnavailableLessonModal
+          image={unavailableLesson}
+          onClose={() => {
+            setShowUnavailable(false);
+          }}
+        />
+      )}
     </div>
   );
 };

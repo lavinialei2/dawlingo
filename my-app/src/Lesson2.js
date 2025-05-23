@@ -6,6 +6,7 @@ import "./App.css";
 import CongratsModal from "./components/CongratsModal";
 import congratsImage from "./assets/lvl2complete.png";
 import { useNavigate } from "react-router-dom";
+import './Playground.css';
 
 export default function Lesson2({ unlockFeature }) {
   const [lessonComplete, setLessonComplete] = useState(false);

@@ -1,7 +1,7 @@
 import React from "react";
 import "./CongratsModal.css";
 
-const CongratsModal = ({ image, onClose, onReturnHome }) => {
+const UnavailableLessonModal = ({ image, onClose, onReturnHome }) => {
   return (
     <div className="congrats-overlay">
       <div className="congrats-modal">
@@ -10,9 +10,6 @@ const CongratsModal = ({ image, onClose, onReturnHome }) => {
         {image && (
           <div className="image-wrapper">
             <img src={image} alt="Congratulations" className="congrats-image" />
-            <button className="return-home-button" onClick={onReturnHome}>
-              Return Home
-            </button>
           </div>
         )}
       </div>
@@ -20,4 +17,4 @@ const CongratsModal = ({ image, onClose, onReturnHome }) => {
   );
 };
 
-export default CongratsModal;
+export default UnavailableLessonModal;

@@ -6,6 +6,8 @@ import * as Tone from "tone";
 import TrackList from "./components/TrackList";
 import { useNavigate } from 'react-router-dom';
 import './Playground.css';
+import PlaygroundIntroModal from './components/PlaygroundIntroModal';
+import playgroundIntro from './assets/playgroundIntro.png'
 
 const Playground = ({ featureLocks }) => {
 
@@ -18,6 +20,14 @@ const Playground = ({ featureLocks }) => {
   const [showCompressor, setShowCompressor] = useState(false);
   const [showEQ, setShowEQ] = useState(false);
   const [showReverb, setShowReverb] = useState(false);
+  const [showIntro, setShowIntro] = useState(false);
+
+useEffect(() => {
+  if (localStorage.getItem("showPlaygroundIntro") === "true") {
+    setShowIntro(true);
+    localStorage.removeItem("showPlaygroundIntro"); 
+  }
+}, []);
 
   const navigateToHome = () => {
     navigate('/home');
@@ -303,6 +313,17 @@ const Playground = ({ featureLocks }) => {
         )}
       </div>
       </div>
+      {showIntro && (
+        <PlaygroundIntroModal
+          image={playgroundIntro}
+          onClose={() => setShowIntro(false)} 
+          onReturnHome={() => {
+          setTimeout(() => {
+          navigate("/home");
+          }, 50);
+        }}
+        />
+      )}
     </>
   );
 };

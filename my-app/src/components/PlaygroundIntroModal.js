@@ -1,7 +1,7 @@
 import React from "react";
 import "./CongratsModal.css";
 
-const CongratsModal = ({ image, onClose, onReturnHome }) => {
+const PlaygroundIntroModal = ({ image, onClose, onReturnHome }) => {
   return (
     <div className="congrats-overlay">
       <div className="congrats-modal">
@@ -20,4 +20,4 @@ const CongratsModal = ({ image, onClose, onReturnHome }) => {
   );
 };
 
-export default CongratsModal;
+export default PlaygroundIntroModal;

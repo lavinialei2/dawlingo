@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
+import './Timeline.css'
 const CONTROL_WIDTH = 160;
 const BEAT_WIDTH = 80;
 const TRACK_HEIGHT = 80;
@@ -159,12 +160,14 @@ export default function Timeline({
             }}
           >
             <div>
-              <strong> {track.instrument || "Instrument"}</strong>
+              {/* Commented out for now because styling needs to be adjusted */}
+              {/* <strong> {track.instrument || "Instrument"}</strong> */}
             </div>
             <label>
-              Volume
+              {/* Volume */}
               <input
                 type="range"
+                className="volume-slider"
                 min={0}
                 max={1}
                 step={0.01}
@@ -175,6 +178,7 @@ export default function Timeline({
               />
             </label>
             <button
+              className="mute-button"
               onClick={() => onToggleMute(track.id)}
               style={{ fontSize: "10px" }}
             >
