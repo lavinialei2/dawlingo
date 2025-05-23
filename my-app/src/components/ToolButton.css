@@ -36,3 +36,7 @@
 .tool-button:hover {
   transform: scale(1.05);
 }
+
+.tool-button.cursor-not-allowed:hover {
+  transform: none;
+}
