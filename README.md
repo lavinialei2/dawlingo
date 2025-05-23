@@ -21,3 +21,5 @@ To run the app, code
 ```
 npm start
 ```
+# Interaction flow
+For the first interaction flow click on the first lesson under "Basics." For the second interation flow, click on the playground button in the top right corner.
