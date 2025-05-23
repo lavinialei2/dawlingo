@@ -4,13 +4,44 @@ import Timeline from "./components/Timeline";
 import "./App.css";
 import * as Tone from "tone";
 import TrackList from "./components/TrackList";
+import CongratsModal from "./components/CongratsModal";
+import congratsImage from "./assets/lvl1complete.png";
+import { useNavigate } from "react-router-dom";
+import './Playground.css';
+import './Lessons.css'
+import lessons from './Lessons';
 
-export default function Lesson1() {
+export default function Lesson1({ onLessonComplete }) {
+  const navigate = useNavigate();
   const [isPlaying, setIsPlaying] = useState(false);
   const [tracks, setTracks] = useState([]);
   const [selectedTrackId, setSelectedTrackId] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
   const [playheadPosition, setPlayheadPosition] = useState(0);
+  const [lessonComplete, setLessonComplete] = useState(false);
+  const [showCongrats, setShowCongrats] = useState(false);
+
+  const lesson = lessons[0].steps;
+  const [stepIndex, setStepIndex] = useState(0);
+  const isLastStep = stepIndex === lesson.length - 1;
+
+  const [currentStep, setCurrentStep] = useState(0);
+  const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0 });
+
+
+
+  const navigateToHome = () => {
+    navigate('/home');
+  };
+
+  const navigateToPlayground = () => {
+    navigate('/playground')
+  };
+
+  useEffect(() => {
+    const completed = localStorage.getItem("lesson1Complete") === "true";
+    setLessonComplete(completed);
+  }, []);
 
   useEffect(() => {
     let id;
@@ -26,11 +57,10 @@ export default function Lesson1() {
     return () => cancelAnimationFrame(id);
   }, [isPlaying]);
 
-  // Use space bar on keyboard to control play/pause
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.code === "Space") {
-        e.preventDefault(); // prevent page scroll
+        e.preventDefault();
         setIsPlaying((prev) => {
           const newPlay = !prev;
           if (newPlay) {
@@ -57,13 +87,13 @@ export default function Lesson1() {
       prev.map((t) =>
         t.id === trackId
           ? {
-              ...t,
-              clips: t.clips.map((clip, i) =>
-                i === clipIndex
-                  ? { ...clip, start: Math.max(0, newStart) }
-                  : clip
-              ),
-            }
+            ...t,
+            clips: t.clips.map((clip, i) =>
+              i === clipIndex
+                ? { ...clip, start: Math.max(0, newStart) }
+                : clip
+            ),
+          }
           : t
       )
     );
@@ -74,9 +104,9 @@ export default function Lesson1() {
       prev.map((t) =>
         t.id === trackId
           ? {
-              ...t,
-              clips: t.clips.filter((_, i) => i !== clipIndex),
-            }
+            ...t,
+            clips: t.clips.filter((_, i) => i !== clipIndex),
+          }
           : t
       )
     );
@@ -87,11 +117,11 @@ export default function Lesson1() {
       prev.map((t) =>
         t.id === trackId
           ? {
-              ...t,
-              clips: t.clips.map((clip, i) =>
-                i === clipIndex ? { ...clip, volume } : clip
-              ),
-            }
+            ...t,
+            clips: t.clips.map((clip, i) =>
+              i === clipIndex ? { ...clip, volume } : clip
+            ),
+          }
           : t
       )
     );
@@ -191,13 +221,68 @@ export default function Lesson1() {
     isRecording.mic.disconnect();
   };
 
-  return (
-    <div className="App">
-      <h1>Lesson 1: Track Controls</h1>
-      <TransportControls isPlaying={isPlaying} setIsPlaying={setIsPlaying} />
-      <button onClick={addTrack}>Add Track</button>
+  const handleLessonComplete = () => {
+    const currentHighest = parseInt(localStorage.getItem("highestLessonCompleted") || "0");
 
-      <div>
+    // Lesson 1 is index 0
+    if (currentHighest < 1) {
+      localStorage.setItem("highestLessonCompleted", "1");
+    }
+
+    setLessonComplete(true);
+    localStorage.setItem("lesson1Complete", "true");
+
+    if (onLessonComplete) onLessonComplete("lesson1");
+
+    setShowCongrats(true);
+  };
+
+
+  return (
+    <>
+    {stepIndex < lesson.length && (
+  <div
+    className={`lesson-popup 
+      ${lesson[stepIndex].hasArrow ? "with-arrow" : ""}
+      ${(stepIndex === 6 | stepIndex === 7 | stepIndex === 9) ? "arrow-left" : "arrow-center"}`}
+    style={{
+      position: "absolute",
+      top: lesson[stepIndex].position.top,
+      left: lesson[stepIndex].position.left,
+      transform: "translate(-50%, -100%)",
+    }}
+  >
+    <h4>{lesson[stepIndex].title}</h4>
+    <p>{lesson[stepIndex].text}</p>
+    {/* <button className="lesson-button" onClick={() => setStepIndex(stepIndex + 1)}>Next</button> */}
+    {isLastStep ? (
+      <button
+        className="lesson-button"
+        onClick={handleLessonComplete}
+        // disabled={lessonComplete}
+      >
+        {"Complete Lesson"}
+      </button>
+    ) : (
+      <button
+        className="lesson-button"
+        onClick={() => setStepIndex(stepIndex + 1)}
+      >Next
+      </button>
+    )}
+
+  </div>
+)}
+
+    <div className="playground-header">
+        <h2 className="pixel-font playground-header-title">Lesson 1: Intro to the DAW</h2>
+        <button className="home-button" onClick={navigateToHome}>Home</button>
+      </div>
+    <div className="playground-container">
+
+      <div className="playground-controls">
+        <TransportControls isPlaying={isPlaying} setIsPlaying={setIsPlaying} />
+      <button onClick={addTrack}>Add Track</button>
         <button
           onClick={isRecording ? stopRecording : startRecording}
           disabled={!selectedTrackId}
@@ -213,7 +298,7 @@ export default function Lesson1() {
         </button>
         <button onClick={() => onScrubPlayhead(0)}>Reset Playhead</button>
 
-        <br></br>
+        <br />
         <label>Playhead:</label>
         <input
           type="range"
@@ -236,9 +321,24 @@ export default function Lesson1() {
         onDeleteClip={onDeleteClip}
         onSetClipVolume={onSetClipVolume}
         onScrubPlayhead={onScrubPlayhead}
-        onVolumeChange={updateTrackVolume} // ✅ added here
-        onToggleMute={toggleMuteTrack} // ✅ added here
+        onVolumeChange={updateTrackVolume}
+        onToggleMute={toggleMuteTrack}
       />
+      {showCongrats && (
+        <CongratsModal
+          image={congratsImage}
+          onClose={() => {
+            setShowCongrats(false);
+          }}
+          onReturnHome={() => {
+            setTimeout(() => {
+              navigate("/home");
+            }, 50);
+          }}
+        />
+      )}
     </div>
+  </>
+  
   );
 }

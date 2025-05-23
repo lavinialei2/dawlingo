@@ -1,5 +1,5 @@
 .dawlingo-light-pink {
-  background-color: #f9eff4;
+  background-color: #f5dbe8;
 }
 
 .dawlingo-pink {
@@ -47,7 +47,8 @@
 }
 
 .hover\:bg-opacity-80:hover {
-  opacity: 0.8;
+  transform: scale(1.05);
+  cursor: pointer;
 }
 
 .min-h-screen {
