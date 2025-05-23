@@ -275,7 +275,7 @@ export default function Lesson1({ onLessonComplete }) {
 )}
 
     <div className="playground-header">
-        <h2 className="playground-header-title">Lesson 1: Intro to the DAW</h2>
+        <h2 className="pixel-font playground-header-title">Lesson 1: Intro to the DAW</h2>
         <button className="home-button" onClick={navigateToHome}>Home</button>
       </div>
     <div className="playground-container">

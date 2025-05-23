@@ -235,7 +235,7 @@ useEffect(() => {
   return (
     <>
       <div className="playground-header">
-        <h2 className="playground-header-title">DAW Playground</h2>
+        <h2 className="pixel-font playground-header-title">DAW Playground</h2>
         <button className="home-button" onClick={navigateToHome}>Home</button>
       </div>
       <div className="playground-container">

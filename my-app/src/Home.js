@@ -36,7 +36,7 @@ const Home = () => {
     <div className="min-h-screen dawlingo-light-pink">
       <header className="dawlingo-pink py-4 px-6 flex justify-between items-center">
         <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold text-white">DAWlingo</h1>
+          <h1 className="pixel-font font-bold text-white">DAWlingo</h1>
         </div>
         <playground-button 
           onClick={navigateToPlayground}
