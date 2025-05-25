@@ -12,7 +12,7 @@ git clone https://github.com/lavinialei2/musiclingo.git
 
 Then install all relevant node packages
 ```
-cd musiclingo/my-app
+cd dawlingo/my-app
 npm install
 npm install tone
 ```
