@@ -5,6 +5,7 @@ import Home from './Home';
 import Playground from "./Playground";
 import Lesson1 from "./Lesson1";
 import Lesson2 from "./Lesson2";
+import ProgressScreen from "./ProgressScreen"; // importing ProgressScreen
 
 function App() {
   // Global progress state
@@ -43,6 +44,13 @@ function App() {
           path="/playground"
           element={<Playground featureLocks={featureLocks} />}
         />
+        
+        {/* Adding route to progress screen */}
+        <Route 
+          path ="/progress" 
+          element={<ProgressScreen/>}
+          />
+          
       </Routes>
     </Router>
   );

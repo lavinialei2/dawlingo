@@ -9,6 +9,7 @@ import './components/ToolButton.css'
 import UnavailableLessonModal from "./components/UnavailableLessonModal";
 import unavailableLesson from "./assets/unavailable.png";
 import { ReactComponent as Playground } from './assets/Playground.svg';
+import './ProgressScreen.css'; //importing ProgressScreen.css for Progress button 
 
 
 const Home = () => {
@@ -31,10 +32,16 @@ const Home = () => {
     // temp logic: only allow to click on first lesson !!
     lessonIndex > 0 ? setShowUnavailable(true) : navigate(`/lesson${lessonIndex + 1}`);
   };
+  
+  // Navigate to Progress url
+  const navigateToProgress = () => {
+    navigate("/progress")
+  }; 
 
   return (
+    
     <div className="min-h-screen dawlingo-light-pink">
-      <header className="dawlingo-pink py-4 px-6 flex justify-between items-center">
+      <header className="dawlingo-pink py-4 px-6 flex justify-between items-center"> 
         <div className="flex items-center gap-2">
           <h1 className="pixel-font font-bold text-white">DAWlingo</h1>
         </div>
@@ -46,8 +53,13 @@ const Home = () => {
           <Playground width={80} height={80} fill="white" />
         </playground-button>
       </header>
-        
-      <main className="container max-w-3xl mx-auto py-8 px-4">
+     
+     {/* Adding progress button to the home screen */}
+      <div class ="progress-button-bottom-right">
+        <button className ="progress-button" onClick={navigateToProgress}><b>Progress</b></button> 
+      </div>
+     
+     <main className="container max-w-3xl mx-auto py-8 px-4">
         <div className="space-y-8">
           {levels.map((level, levelIndex) => (
             <div key={level.id} className="space-y-4">
