@@ -105,10 +105,9 @@ export default function Timeline({
         style={{
           position: "absolute",
           top: 0,
-          left: `${
-            (playheadPosition / numBeats) * (BEAT_WIDTH * numBeats) +
+          left: `${(playheadPosition / numBeats) * (BEAT_WIDTH * numBeats) +
             CONTROL_WIDTH
-          }px`,
+            }px`,
 
           width: "12px",
           marginLeft: "4px",
@@ -212,29 +211,45 @@ export default function Timeline({
               onMoveClip(draggedTrackId, draggedClipIndex, newStart);
             }}
           >
-            {track.clips.map((clip, clipIndex) => (
-              <div
-                key={clipIndex}
-                draggable
-                onDragStart={(e) => {
-                  e.dataTransfer.setData("trackId", track.id);
-                  e.dataTransfer.setData("clipIndex", clipIndex);
-                }}
-                style={{
-                  position: "absolute",
-                  top: "2px",
-                  left: `${(clip.start / numBeats) * 100}%`,
-                  width: `${(clip.duration / numBeats) * 100}%`,
-                  height: TRACK_HEIGHT,
-                  backgroundColor: track.muted ? "#888" : "#3fa9f5",
-                  opacity: track.muted ? 0.5 : 1,
-                  cursor: "grab",
-                  borderRadius: "4px",
-                  boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
-                }}
-                title={`Start: ${clip.start.toFixed(2)}s`}
-              />
-            ))}
+            {track.clips
+              .filter((clip) => clip.url || clip.isRecordingClip) // allow recording clips with no URL
+              .map((clip, clipIndex) => {
+                const clipStartPercent = (clip.start / numBeats) * 100;
+                const clipWidthPercent = (clip.duration / numBeats) * 100;
+
+                return (
+                  <div
+                    key={clipIndex}
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData("trackId", track.id);
+                      e.dataTransfer.setData("clipIndex", clipIndex);
+                    }}
+                    style={{
+                      position: "absolute",
+                      top: "2px",
+                      left: `${clipStartPercent}%`,
+                      width: `${clipWidthPercent}%`,
+                      height: TRACK_HEIGHT,
+                      backgroundColor: clip.isRecordingClip
+                        ? "red"
+                        : track.muted
+                          ? "#888"
+                          : "#3fa9f5",
+                      opacity: track.muted ? 0.5 : 1,
+                      cursor: "grab",
+                      borderRadius: "4px",
+                      boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
+                    }}
+                    title={
+                      clip.isRecordingClip
+                        ? "Recording..."
+                        : `Start: ${clip.start.toFixed(2)}s`
+                    }
+                  />
+                );
+              })}
+
           </div>
         </div>
       ))}

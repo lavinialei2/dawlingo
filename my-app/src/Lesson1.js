@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import TransportControls from "./components/TransportControls";
 import Timeline from "./components/Timeline";
 import "./App.css";
@@ -45,17 +45,16 @@ export default function Lesson1({ onLessonComplete }) {
 
   useEffect(() => {
     let id;
+
     const update = () => {
       setPlayheadPosition(Tone.Transport.seconds);
       id = requestAnimationFrame(update);
     };
 
-    if (isPlaying) {
-      id = requestAnimationFrame(update);
-    }
+    id = requestAnimationFrame(update); // always run the loop
 
     return () => cancelAnimationFrame(id);
-  }, [isPlaying]);
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -182,7 +181,8 @@ export default function Lesson1({ onLessonComplete }) {
 
   const startRecording = async () => {
     if (!selectedTrackId) return;
-    await Tone.start();
+
+    await Tone.start(); // ensures audio context is resumed
     const mic = new Tone.UserMedia();
     await mic.open();
 
@@ -190,8 +190,75 @@ export default function Lesson1({ onLessonComplete }) {
     mic.connect(rec);
     rec.start();
 
-    setIsRecording({ mic, rec, startTime: Tone.Transport.seconds });
+    // if not already playing, start the transport
+    if (Tone.Transport.state !== "started") {
+      Tone.Transport.start();
+    }
+
+
+    // also make sure your app state reflects that playback is running
+    setIsPlaying(true);
+
+    // create temporary live clip
+    setTracks((prevTracks) =>
+      prevTracks.map((t) =>
+        t.id === selectedTrackId
+          ? {
+            ...t,
+            clips: [
+              ...t.clips,
+              {
+                url: null,
+                start: Tone.Transport.seconds,
+                duration: 0,
+                volume: 1,
+                isRecordingClip: true,
+              },
+            ],
+          }
+          : t
+      )
+    );
+
+    setIsRecording({
+      mic,
+      rec,
+      startTime: Tone.Transport.seconds,
+    });
   };
+
+  const recordingRef = useRef(isRecording);
+  recordingRef.current = isRecording;
+  
+  useEffect(() => {
+    let id;
+  
+    const updateDuration = () => {
+      const currentRecording = recordingRef.current;
+      if (!currentRecording || !selectedTrackId) return;
+  
+      setTracks((prevTracks) =>
+        prevTracks.map((t) =>
+          t.id === selectedTrackId
+            ? {
+                ...t,
+                clips: t.clips.map((clip) =>
+                  clip.isRecordingClip
+                    ? { ...clip, duration: Tone.Transport.seconds - clip.start }
+                    : clip
+                ),
+              }
+            : t
+        )
+      );
+  
+      id = requestAnimationFrame(updateDuration);
+    };
+  
+    id = requestAnimationFrame(updateDuration);
+    return () => cancelAnimationFrame(id);
+  }, []);
+  
 
   const stopRecording = async () => {
     if (!isRecording || !selectedTrackId) return;
@@ -215,13 +282,28 @@ export default function Lesson1({ onLessonComplete }) {
         if (!track) return;
         player.connect(track.gainNode);
         player.sync().start(clip.start);
-        updateTrackClip(selectedTrackId, clip);
+
+        setTracks((prevTracks) =>
+          prevTracks.map((t) =>
+            t.id === selectedTrackId
+              ? {
+                ...t,
+                clips: [
+                  ...t.clips.filter((c) => !c.isRecordingClip),
+                  clip,
+                ],
+              }
+              : t
+          )
+        );
+
         setIsRecording(false);
       },
     });
 
     isRecording.mic.disconnect();
   };
+
 
   const handleLessonComplete = () => {
     const currentHighest = parseInt(localStorage.getItem("highestLessonCompleted") || "0");
