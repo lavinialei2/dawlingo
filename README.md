@@ -4,7 +4,7 @@
 
 First clone the repository using
 ```
-git clone https://github.com/lavinialei2/musiclingo.git
+git clone https://github.com/lavinialei2/dawlingo.git
 ```
 
 Then install all relevant node packages
