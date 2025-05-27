@@ -10,9 +10,6 @@ const PlaygroundIntroModal = ({ image, onClose, onReturnHome }) => {
         {image && (
           <div className="image-wrapper">
             <img src={image} alt="Congratulations" className="congrats-image" />
-            <button className="return-home-button" onClick={onReturnHome}>
-              Return Home
-            </button>
           </div>
         )}
       </div>
