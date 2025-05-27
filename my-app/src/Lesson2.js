@@ -101,8 +101,9 @@ export default function Lesson2({ unlockFeature }) {
   };
 
   const addTrack = () => {
+    const id = Date.now();
     const newTrack = {
-      id: Date.now(),
+      id,
       clips: [],
       volume: 1,
       muted: false,
@@ -110,6 +111,7 @@ export default function Lesson2({ unlockFeature }) {
       gainNode: new Tone.Gain(1).toDestination(),
     };
     setTracks([...tracks, newTrack]);
+    setSelectedTrackId(id);
   };
 
   const updateTrackVolume = (id, volume) => {
