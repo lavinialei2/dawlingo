@@ -19,6 +19,29 @@ export default function Lesson2({ unlockFeature }) {
   const [showCongrats, setShowCongrats] = useState(false);
   const [showInstrumentModal, setShowInstrumentModal] = useState(false);
   const [pendingTrackId, setPendingTrackId] = useState(null);
+  // Define per-instrument samplers
+  const samplers = {
+    piano: new Tone.Sampler({
+      urls: {
+        C4: "C4.mp3",
+        "D#4": "Ds4.mp3",
+        "F#4": "Fs4.mp3",
+        A4: "A4.mp3",
+      },
+      baseUrl: "https://tonejs.github.io/audio/salamander/",
+      onload: () => console.log("Piano loaded!"),
+    }).toDestination(),
+
+    guitar: new Tone.MonoSynth({
+      oscillator: { type: "triangle" },
+      envelope: {
+        attack: 0.005,
+        decay: 0.2,
+        sustain: 0.2,
+        release: 0.8,
+      },
+    }).toDestination(),
+  };
 
   useEffect(() => {
     const stored = parseInt(
@@ -108,17 +131,6 @@ export default function Lesson2({ unlockFeature }) {
     );
   };
 
-  // const addTrack = () => {
-  //   const newTrack = {
-  //     id: Date.now(),
-  //     clips: [],
-  //     volume: 1,
-  //     muted: false,
-  //     instrument: "voice",
-  //     gainNode: new Tone.Gain(1).toDestination(),
-  //   };
-  //   setTracks([...tracks, newTrack]);
-  // };
   const addTrack = () => {
     setPendingTrackId(Date.now());
     setShowInstrumentModal(true);
@@ -199,6 +211,59 @@ export default function Lesson2({ unlockFeature }) {
       },
     });
     isRecording.mic.disconnect();
+  };
+  function InstrumentPanel({ instrument, onNotePlay }) {
+    const notes = ["C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5"];
+    return (
+      <div style={{ display: "flex", gap: "6px", marginTop: "8px" }}>
+        {notes.map((note) => (
+          <button
+            key={note}
+            onClick={() => onNotePlay(note)}
+            style={{
+              padding: "12px",
+              backgroundColor: "#f0f0f0",
+              border: "1px solid #aaa",
+              borderRadius: "4px",
+              cursor: "pointer",
+            }}
+          >
+            {note}
+          </button>
+        ))}
+      </div>
+    );
+  }
+
+  const handleNotePlay = async (trackId, note) => {
+    await Tone.start();
+    const track = tracks.find((t) => t.id === trackId);
+    const instrument = track?.instrument;
+    const sampler = samplers[instrument];
+    const time = Tone.Transport.seconds;
+
+    if (!sampler) return;
+
+    // Only wait if it's a Sampler
+    if (sampler instanceof Tone.Sampler) {
+      await sampler.loaded;
+    }
+
+    sampler.triggerAttackRelease(note, "8n", Tone.now());
+
+    // Record this note as a clip
+    if (isRecording && selectedTrackId === trackId) {
+      const clip = {
+        url: null,
+        note,
+        start: time,
+        duration: Tone.Time("8n").toSeconds(),
+        volume: 1,
+        isVirtual: true,
+      };
+
+      updateTrackClip(trackId, clip);
+    }
   };
 
   return (
@@ -312,6 +377,18 @@ export default function Lesson2({ unlockFeature }) {
         onToggleMute={toggleMuteTrack}
         isRecording={isRecording}
       />
+
+      {tracks.map((track) =>
+        track.instrument !== "voice" ? (
+          <InstrumentPanel
+            key={track.id}
+            instrument={track.instrument}
+            onNotePlay={(note) => handleNotePlay(track.id, note)}
+            isRecording={isRecording}
+          />
+        ) : null
+      )}
+
       <div style={{ position: "fixed", bottom: "20px" }}>
         <button onClick={handleLessonComplete} disabled={lessonComplete}>
           {lessonComplete ? "✅ Lesson Completed" : "Mark Lesson Complete"}
