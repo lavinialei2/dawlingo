@@ -6,7 +6,7 @@ import "./App.css";
 import CongratsModal from "./components/CongratsModal";
 import congratsImage from "./assets/lvl2complete.png";
 import { useNavigate } from "react-router-dom";
-import './Playground.css';
+import "./Playground.css";
 
 export default function Lesson2({ unlockFeature }) {
   const [lessonComplete, setLessonComplete] = useState(false);
@@ -17,9 +17,14 @@ export default function Lesson2({ unlockFeature }) {
   const [playheadPosition, setPlayheadPosition] = useState(0);
   const navigate = useNavigate();
   const [showCongrats, setShowCongrats] = useState(false);
+  const [showInstrumentModal, setShowInstrumentModal] = useState(false);
+  const [pendingTrackId, setPendingTrackId] = useState(null);
 
   useEffect(() => {
-    const stored = parseInt(localStorage.getItem("highestLessonCompleted") || "0", 10);
+    const stored = parseInt(
+      localStorage.getItem("highestLessonCompleted") || "0",
+      10
+    );
     if (stored >= 2) {
       setLessonComplete(true);
       unlockFeature("compressor");
@@ -27,7 +32,6 @@ export default function Lesson2({ unlockFeature }) {
       unlockFeature("reverb");
     }
   }, []);
-  
 
   useEffect(() => {
     let id;
@@ -43,19 +47,19 @@ export default function Lesson2({ unlockFeature }) {
     unlockFeature("compressor");
     unlockFeature("eq");
     unlockFeature("reverb");
-  
+
     setLessonComplete(true);
     localStorage.setItem("lesson2Complete", "true");
-  
-    const currentProgress = parseInt(localStorage.getItem("highestLessonCompleted") || "0");
+
+    const currentProgress = parseInt(
+      localStorage.getItem("highestLessonCompleted") || "0"
+    );
     if (currentProgress < 2) {
       localStorage.setItem("highestLessonCompleted", "2");
     }
-  
+
     setShowCongrats(true);
   };
-  
-
 
   const onScrubPlayhead = (pos) => {
     Tone.Transport.seconds = pos;
@@ -67,11 +71,13 @@ export default function Lesson2({ unlockFeature }) {
       prev.map((t) =>
         t.id === trackId
           ? {
-            ...t,
-            clips: t.clips.map((clip, i) =>
-              i === clipIndex ? { ...clip, start: Math.max(0, newStart) } : clip
-            ),
-          }
+              ...t,
+              clips: t.clips.map((clip, i) =>
+                i === clipIndex
+                  ? { ...clip, start: Math.max(0, newStart) }
+                  : clip
+              ),
+            }
           : t
       )
     );
@@ -80,7 +86,9 @@ export default function Lesson2({ unlockFeature }) {
   const onDeleteClip = (trackId, clipIndex) => {
     setTracks((prev) =>
       prev.map((t) =>
-        t.id === trackId ? { ...t, clips: t.clips.filter((_, i) => i !== clipIndex) } : t
+        t.id === trackId
+          ? { ...t, clips: t.clips.filter((_, i) => i !== clipIndex) }
+          : t
       )
     );
   };
@@ -90,26 +98,30 @@ export default function Lesson2({ unlockFeature }) {
       prev.map((t) =>
         t.id === trackId
           ? {
-            ...t,
-            clips: t.clips.map((clip, i) =>
-              i === clipIndex ? { ...clip, volume } : clip
-            ),
-          }
+              ...t,
+              clips: t.clips.map((clip, i) =>
+                i === clipIndex ? { ...clip, volume } : clip
+              ),
+            }
           : t
       )
     );
   };
 
+  // const addTrack = () => {
+  //   const newTrack = {
+  //     id: Date.now(),
+  //     clips: [],
+  //     volume: 1,
+  //     muted: false,
+  //     instrument: "voice",
+  //     gainNode: new Tone.Gain(1).toDestination(),
+  //   };
+  //   setTracks([...tracks, newTrack]);
+  // };
   const addTrack = () => {
-    const newTrack = {
-      id: Date.now(),
-      clips: [],
-      volume: 1,
-      muted: false,
-      instrument: "voice",
-      gainNode: new Tone.Gain(1).toDestination(),
-    };
-    setTracks([...tracks, newTrack]);
+    setPendingTrackId(Date.now());
+    setShowInstrumentModal(true);
   };
 
   const updateTrackVolume = (id, volume) => {
@@ -209,6 +221,71 @@ export default function Lesson2({ unlockFeature }) {
           Delete Track
         </button>
         <button onClick={() => onScrubPlayhead(0)}>Reset Playhead</button>
+        {showInstrumentModal && (
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              backgroundColor: "rgba(0,0,0,0.5)",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              zIndex: 1000,
+            }}
+          >
+            <div
+              style={{
+                background: "#fff",
+                padding: "24px",
+                borderRadius: "8px",
+                minWidth: "300px",
+              }}
+            >
+              <h3>Select an Instrument</h3>
+              <ul style={{ listStyle: "none", padding: 0 }}>
+                {["voice", "piano", "guitar", "drums"].map((instr) => (
+                  <li key={instr}>
+                    <button
+                      onClick={() => {
+                        const gainNode = new Tone.Gain(1).toDestination();
+                        const newTrack = {
+                          id: pendingTrackId,
+                          clips: [],
+                          volume: 1,
+                          muted: false,
+                          instrument: instr,
+                          gainNode,
+                        };
+                        setTracks((prev) => [...prev, newTrack]);
+                        setShowInstrumentModal(false);
+                        setPendingTrackId(null);
+                      }}
+                      style={{
+                        margin: "6px 0",
+                        padding: "8px 12px",
+                        width: "100%",
+                        textAlign: "left",
+                        fontSize: "16px",
+                      }}
+                    >
+                      🎵 {instr.charAt(0).toUpperCase() + instr.slice(1)}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <button
+                onClick={() => setShowInstrumentModal(false)}
+                style={{ marginTop: "12px" }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
         <br />
         <label>Playhead:</label>
         <input
@@ -236,10 +313,7 @@ export default function Lesson2({ unlockFeature }) {
         isRecording={isRecording}
       />
       <div style={{ position: "fixed", bottom: "20px" }}>
-        <button
-          onClick={handleLessonComplete}
-          disabled={lessonComplete}
-        >
+        <button onClick={handleLessonComplete} disabled={lessonComplete}>
           {lessonComplete ? "✅ Lesson Completed" : "Mark Lesson Complete"}
         </button>
       </div>
