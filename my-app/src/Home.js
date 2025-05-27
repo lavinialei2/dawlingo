@@ -9,7 +9,12 @@ import './components/ToolButton.css'
 import UnavailableLessonModal from "./components/UnavailableLessonModal";
 import unavailableLesson from "./assets/unavailable.png";
 import { ReactComponent as Playground } from './assets/Playground.svg';
-import './ProgressScreen.css'; //importing ProgressScreen.css for Progress button 
+import './ProgressButton.css'; 
+import ProgressPopUp from "./components/ProgressPopUp";
+import lesson0 from "./assets/0lesson.png";
+import lesson1 from "./assets/1lesson.png";
+import lesson2 from "./assets/2lesson.png";
+
 
 
 const Home = () => {
@@ -17,6 +22,8 @@ const Home = () => {
   const [showUnavailable, setShowUnavailable] = useState(false);
   const [showPlaygroundIntro, setShowPlaygroundIntro] = useState(false);
   const [highestLessonCompleted, setHighestLessonCompleted] = useState(0);
+  const [showProgress, setShowProgress] = useState(false);
+  const lessonPopUp = [lesson0, lesson1, lesson2]
 
   useEffect(() => {
     const stored = parseInt(localStorage.getItem("highestLessonCompleted") || "0");
@@ -33,10 +40,6 @@ const Home = () => {
     lessonIndex > 0 ? setShowUnavailable(true) : navigate(`/lesson${lessonIndex + 1}`);
   };
   
-  // Navigate to Progress url
-  const navigateToProgress = () => {
-    navigate("/progress")
-  }; 
 
   return (
     
@@ -54,10 +57,9 @@ const Home = () => {
         </playground-button>
       </header>
      
-     {/* Adding progress button to the home screen */}
-      <div class ="progress-button-bottom-right">
-        <button className ="progress-button" onClick={navigateToProgress}><b>Progress</b></button> 
-      </div>
+        <div class ="progress-button-bottom-right">
+           <button className ="progress-button" onClick={() => setShowProgress(true)}><b>Progress</b></button> 
+        </div>
      
      <main className="container max-w-3xl mx-auto py-8 px-4">
         <div className="space-y-8">
@@ -86,6 +88,7 @@ const Home = () => {
                         {tool.name} {isUnlocked ? "" : "🔒"}
                       </span>
                     </div>
+
                   );
                 })}
               </div>
@@ -100,6 +103,15 @@ const Home = () => {
             setShowUnavailable(false);
           }}
         />
+    )}
+
+    {showProgress && (
+          <ProgressPopUp
+          image={lessonPopUp[highestLessonCompleted]}
+          onClose={() => {
+              setShowProgress(false);
+          }}
+          />
       )}
     </div>
   );
