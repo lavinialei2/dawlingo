@@ -1,5 +1,10 @@
 import React, { useRef, useState, useEffect } from "react";
 import './Timeline.css'
+import { Mic, Piano } from "lucide-react";
+
+
+
+
 const CONTROL_WIDTH = 160;
 const BEAT_WIDTH = 80;
 const TRACK_HEIGHT = 80;
@@ -155,23 +160,45 @@ export default function Timeline({
               width: `${CONTROL_WIDTH}px`,
               padding: "4px",
               display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              gap: "4px",
-              fontSize: "10px",
+              flexDirection: "row", // ⬅️ now row instead of column
+              alignItems: "center",
               color: "#ccc",
               borderRight: "1px solid #555",
+              height: "100%", // make sure it fills the track height
             }}
           >
-            <div>
-              {/* Commented out for now because styling needs to be adjusted */}
-              {/* <strong> {track.instrument || "Instrument"}</strong> */}
+            {/* Icon Column */}
+            <div
+              style={{
+                width: "40px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                height: "100%",
+              }}
+            >
+              {track.instrument === "microphone" ? (
+                <Mic size={24} style={{ color: "#d66" }} />
+              ) : (
+                <Piano size={24} style={{ color: "#6ad" }} />
+              )}
             </div>
-            <label>
-              {/* Volume */}
+
+            {/* Controls Column */}
+            <div
+              style={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                gap: "4px",
+              }}
+            >
               <input
                 type="range"
-                className={(lesson?.[stepIndex]?.target === "volume") ? "highlight-button" : ""}
+                className={
+                  lesson?.[stepIndex]?.target === "volume" ? "highlight-button" : ""
+                }
                 ref={volumeRef}
                 min={0}
                 max={1}
@@ -184,21 +211,23 @@ export default function Timeline({
                   }
                 }}
               />
-            </label>
-            <button
-              className={`mute-button ${(lesson?.[stepIndex]?.target === "mute") ? "highlight-button" : ""}`}
-              ref={muteRef}
-              onClick={() => {
-              onToggleMute(track.id);
-              if (lesson?.[stepIndex]?.target === "volume") {
-                setHasInteracted(true);
-              }              
-            }}
-              style={{ fontSize: "10px" }}
-            >
-              {track.muted ? "Unmute" : "Mute"}
-            </button>
+              <button
+                className={`mute-button ${lesson?.[stepIndex]?.target === "mute" ? "highlight-button" : ""
+                  }`}
+                ref={muteRef}
+                onClick={() => {
+                  onToggleMute(track.id);
+                  if (lesson?.[stepIndex]?.target === "mute") {
+                    setHasInteracted(true);
+                  }
+                }}
+                style={{ fontSize: "10px" }}
+              >
+                {track.muted ? "Unmute" : "Mute"}
+              </button>
+            </div>
           </div>
+
 
           {/* Right Clip Area */}
           <div

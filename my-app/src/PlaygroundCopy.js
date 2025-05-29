@@ -8,6 +8,8 @@ import './Playground.css';
 import PlaygroundIntroModal from './components/PlaygroundIntroModal';
 import playgroundIntro from './assets/playgroundIntro.png'
 import LiveWaveform from "./components/LiveWaveform";
+import PianoPanel from './components/PianoPanel';
+
 
 
 const Playground = ({ featureLocks }) => {
@@ -277,7 +279,7 @@ const Playground = ({ featureLocks }) => {
       volume: 1,
       waveform: null, // temp — will be filled later
     };
-    
+
 
     const player = new Tone.Player({
       url,
@@ -309,7 +311,6 @@ const Playground = ({ featureLocks }) => {
 
     isRecording.mic.disconnect();
   };
-
 
   const renderEffectButton = (label, isLocked, onClick) => (
     <div style={{ marginBottom: "1rem" }}>
@@ -384,6 +385,15 @@ const Playground = ({ featureLocks }) => {
           onVolumeChange={updateTrackVolume}
           onToggleMute={toggleMuteTrack}
         />
+
+        <PianoPanel
+          disabled={featureLocks.piano}
+          isRecording={isRecording}
+          selectedTrackId={selectedTrackId}
+          updateTrackClip={updateTrackClip}
+        />
+
+
         {isRecording && isRecording.analyser && (
           <div>
             <h4 style={{ color: "#ccc" }}>Live Waveform</h4>
@@ -416,6 +426,7 @@ const Playground = ({ featureLocks }) => {
               <button onClick={() => setShowReverb(false)}>Close</button>
             </div>
           )}
+
         </div>
       </div>
       {showIntro && (

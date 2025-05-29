@@ -9,6 +9,7 @@ import PlaygroundIntroModal from './components/PlaygroundIntroModal';
 import playgroundIntro from './assets/playgroundIntro.png'
 import LiveWaveform from "./components/LiveWaveform";
 import PianoPanel from './components/PianoPanel';
+import InstrumentSelectModal from './components/InstrumentSelectModal';
 
 
 
@@ -24,6 +25,8 @@ const Playground = ({ featureLocks }) => {
   const [showEQ, setShowEQ] = useState(false);
   const [showReverb, setShowReverb] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
+  const [showInstrumentModal, setShowInstrumentModal] = useState(false);
+
 
   useEffect(() => {
     if (localStorage.getItem("showPlaygroundIntro") === "true") {
@@ -125,18 +128,24 @@ const Playground = ({ featureLocks }) => {
   };
 
   const addTrack = () => {
+    setShowInstrumentModal(true);
+  };
+
+  const confirmAddTrack = (instrumentType) => {
     const id = Date.now();
     const newTrack = {
       id,
       clips: [],
       volume: 1,
       muted: false,
-      instrument: "voice",
+      instrument: instrumentType, // 'piano' or 'microphone'
       gainNode: new Tone.Gain(1).toDestination(),
     };
     setTracks([...tracks, newTrack]);
     setSelectedTrackId(id);
+    setShowInstrumentModal(false);
   };
+
 
   const updateTrackVolume = (id, volume) => {
     setTracks((prev) =>
@@ -429,6 +438,13 @@ const Playground = ({ featureLocks }) => {
 
         </div>
       </div>
+      {showInstrumentModal && (
+        <InstrumentSelectModal
+          onSelect={confirmAddTrack}
+          onClose={() => setShowInstrumentModal(false)}
+        />
+      )}
+
       {showIntro && (
         <PlaygroundIntroModal
           image={playgroundIntro}

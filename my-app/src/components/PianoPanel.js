@@ -1,5 +1,6 @@
 import * as Tone from "tone";
 import { useEffect, useState, useRef, useCallback } from "react";
+import { samplers } from "./samplers";
 
 // Static key mapping (safe to define outside the component)
 const keyMap = {
@@ -21,7 +22,8 @@ const PianoPanel = ({
   disabled,
   isRecording,
   selectedTrackId,
-  updateTrackClip
+  updateTrackClip,
+  onNotePlayed
 }) => {
   const whiteNotes = [
     "C3", "D3", "E3", "F3", "G3", "A3", "B3",
@@ -44,27 +46,12 @@ const PianoPanel = ({
   const blackKeyOffset = keyWidth / 2;
 
   const [pressedNotes, setPressedNotes] = useState(new Set());
-  const samplerRef = useRef(null);
-
-  useEffect(() => {
-    samplerRef.current = new Tone.Sampler({
-      urls: {
-        C4: "C4.mp3",
-        "D#4": "Ds4.mp3",
-        "F#4": "Fs4.mp3",
-        A4: "A4.mp3",
-      },
-      baseUrl: "https://tonejs.github.io/audio/salamander/",
-      onload: () => console.log("Piano sampler loaded!"),
-    }).toDestination();
-
-    return () => samplerRef.current.dispose();
-  }, []);
 
   const handleNoteDown = useCallback(async (note) => {
     await Tone.start();
-    if (!samplerRef.current) return;
-    samplerRef.current.triggerAttack(note);
+    if (!samplers.piano) return;
+    samplers.piano.triggerAttack(note);
+
 
     if (isRecording && selectedTrackId) {
       const time = Tone.Transport.seconds;
@@ -84,8 +71,9 @@ const PianoPanel = ({
   }, [isRecording, selectedTrackId, updateTrackClip]);
 
   const handleNoteUp = useCallback((note) => {
-    if (!samplerRef.current) return;
-    samplerRef.current.triggerRelease(note);
+    if (!samplers.piano) return;
+    samplers.piano.triggerRelease(note);
+
 
     if (isRecording && selectedTrackId) {
       const endTime = Tone.Transport.seconds;
