@@ -18,6 +18,7 @@
 /* Dark background for overall app */
 .playground-container {
   background-color: #242424;
+  position: relative;
   color: #ffffff;
   min-height: 100vh;
   padding: 20px;
@@ -27,6 +28,7 @@
 /* Control buttons */
 .playground-controls button {
   margin: 8px;
+  position: relative;
   padding: 8px 16px;
   border: none;
   border-radius: 6px;

@@ -11,11 +11,16 @@ export default function Timeline({
   onSelectTrack,
   playheadPosition,
   onMoveClip,
+  volumeRef,
+  muteRef,
   onDeleteClip,
   onSetClipVolume,
   onScrubPlayhead,
   onVolumeChange,
   onToggleMute,
+  stepIndex,
+  setHasInteracted,
+  lesson
 }) {
   const timelineRef = useRef(null);
   const [isDraggingPlayhead, setIsDraggingPlayhead] = useState(false);
@@ -167,19 +172,29 @@ export default function Timeline({
               {/* Volume */}
               <input
                 type="range"
-                className="volume-slider"
+                className={lesson[stepIndex]?.target === "volume" ? "highlight-button" : ""}
+                ref={volumeRef}
                 min={0}
                 max={1}
                 step={0.01}
                 value={track.volume}
-                onChange={(e) =>
-                  onVolumeChange(track.id, parseFloat(e.target.value))
-                }
+                onChange={(e) => {
+                  onVolumeChange(track.id, parseFloat(e.target.value));
+                  if (lesson[stepIndex]?.target === "volume") {
+                    setHasInteracted(true);
+                  }
+                }}
               />
             </label>
             <button
-              className="mute-button"
-              onClick={() => onToggleMute(track.id)}
+              className={`mute-button ${lesson[stepIndex]?.target === "mute" ? "highlight-button" : ""}`}
+              ref={muteRef}
+              onClick={() => {
+              onToggleMute(track.id);
+              if (lesson[stepIndex]?.target === "mute") {
+                setHasInteracted(true);
+              }
+            }}
               style={{ fontSize: "10px" }}
             >
               {track.muted ? "Unmute" : "Mute"}
