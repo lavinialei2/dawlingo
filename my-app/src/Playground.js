@@ -312,37 +312,6 @@ const Playground = ({ featureLocks }) => {
     isRecording.mic.disconnect();
   };
 
-  const pianoSampler = new Tone.Sampler({
-    urls: {
-      C4: "C4.mp3",
-      "D#4": "Ds4.mp3",
-      "F#4": "Fs4.mp3",
-      A4: "A4.mp3",
-    },
-    baseUrl: "https://tonejs.github.io/audio/salamander/",
-    onload: () => console.log("Piano loaded!"),
-  }).toDestination();
-
-  const handlePianoNotePlay = async (note) => {
-    await Tone.start();
-    await pianoSampler.loaded;
-    pianoSampler.triggerAttackRelease(note, "8n", Tone.now());
-
-    if (isRecording && selectedTrackId) {
-      const time = Tone.Transport.seconds;
-      const clip = {
-        url: null,
-        note,
-        start: time,
-        duration: Tone.Time("8n").toSeconds(),
-        volume: 1,
-        isVirtual: true,
-      };
-      updateTrackClip(selectedTrackId, clip);
-    }
-  };
-
-
   const renderEffectButton = (label, isLocked, onClick) => (
     <div style={{ marginBottom: "1rem" }}>
       <h3>{label}</h3>
@@ -417,7 +386,13 @@ const Playground = ({ featureLocks }) => {
           onToggleMute={toggleMuteTrack}
         />
 
-        <PianoPanel onNotePlay={handlePianoNotePlay} disabled={featureLocks.piano} />
+        <PianoPanel
+          disabled={featureLocks.piano}
+          isRecording={isRecording}
+          selectedTrackId={selectedTrackId}
+          updateTrackClip={updateTrackClip}
+        />
+
 
         {isRecording && isRecording.analyser && (
           <div>
