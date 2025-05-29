@@ -19,6 +19,8 @@ export default function Lesson2({ unlockFeature }) {
   const [showCongrats, setShowCongrats] = useState(false);
   const [showInstrumentModal, setShowInstrumentModal] = useState(false);
   const [pendingTrackId, setPendingTrackId] = useState(null);
+  const recordingSession = useRef(null);
+
   // Define per-instrument samplers
   const samplers = {
     piano: new Tone.Sampler({
@@ -30,7 +32,7 @@ export default function Lesson2({ unlockFeature }) {
       },
       baseUrl: "https://tonejs.github.io/audio/salamander/",
       onload: () => console.log("Piano loaded!"),
-    }).toDestination(),
+    }),
 
     guitar: new Tone.MonoSynth({
       oscillator: { type: "triangle" },
@@ -40,10 +42,16 @@ export default function Lesson2({ unlockFeature }) {
         sustain: 0.2,
         release: 0.8,
       },
-    }).toDestination(),
+    }),
   };
 
   useEffect(() => {
+    const unlock = async () => {
+      await Tone.start();
+      console.log("Audio Context started");
+    };
+    unlock();
+
     const stored = parseInt(
       localStorage.getItem("highestLessonCompleted") || "0",
       10
@@ -56,6 +64,34 @@ export default function Lesson2({ unlockFeature }) {
     }
   }, []);
 
+  useEffect(() => {
+    const updateDuration = () => {
+      const session = recordingSession.current;
+      if (!session || !selectedTrackId) return;
+
+      setTracks((prevTracks) =>
+        prevTracks.map((t) =>
+          t.id === selectedTrackId
+            ? {
+                ...t,
+                clips: t.clips.map((clip) =>
+                  clip.isRecordingClip
+                    ? {
+                        ...clip,
+                        duration: Tone.Transport.seconds - clip.start,
+                      }
+                    : clip
+                ),
+              }
+            : t
+        )
+      );
+    };
+
+    const id = setInterval(updateDuration, 100); // update every 100ms
+
+    return () => clearInterval(id); // cleanup when component unmounts
+  }, []);
 
   useEffect(() => {
     let id;
@@ -137,18 +173,8 @@ export default function Lesson2({ unlockFeature }) {
 
   const addTrack = () => {
     const id = Date.now();
-    const newTrack = {
-      id,
-      clips: [],
-      volume: 1,
-      muted: false,
-      instrument: "voice",
-      gainNode: new Tone.Gain(1).toDestination(),
-    };
-    setTracks([...tracks, newTrack]);
-    setSelectedTrackId(id);
+    setPendingTrackId(id);
     setShowInstrumentModal(true);
-
   };
 
   const updateTrackVolume = (id, volume) => {
@@ -190,130 +216,113 @@ export default function Lesson2({ unlockFeature }) {
     setSelectedTrackId(id);
   };
 
-const startRecording = async () => {
+  const startRecording = async () => {
     if (!selectedTrackId) return;
+    if (recordingSession.current?.mic) {
+      try {
+        recordingSession.current.mic.disconnect();
+        await recordingSession.current.mic.close();
+      } catch (err) {
+        console.warn("Failed to clean up previous mic session:", err);
+      }
+    }
 
-    await Tone.start(); // ensures audio context is resumed
+    await Tone.start();
     const mic = new Tone.UserMedia();
     await mic.open();
 
     const rec = new Tone.Recorder();
-    mic.connect(rec);
+    mic.connect(rec); // Send mic to recorder
+
+    const track = tracks.find((t) => t.id === selectedTrackId);
+    // if (track?.gainNode) mic.connect(track.gainNode); // Optional: live monitoring
+
     rec.start();
+    recordingSession.current = {
+      mic,
+      rec,
+      startTime: Tone.Transport.seconds,
+    };
+    setIsRecording(true);
 
-    // if not already playing, start the transport
-    if (Tone.Transport.state !== "started") {
-      Tone.Transport.start();
-    }
-
-
-    // also make sure your app state reflects that playback is running
-    setIsPlaying(true);
-
-    // create temporary live clip
+    // Temporary live clip
     setTracks((prevTracks) =>
       prevTracks.map((t) =>
         t.id === selectedTrackId
           ? {
-            ...t,
-            clips: [
-              ...t.clips,
-              {
-                url: null,
-                start: Tone.Transport.seconds,
-                duration: 0,
-                volume: 1,
-                isRecordingClip: true,
-              },
-            ],
-          }
+              ...t,
+              clips: [
+                ...t.clips,
+                {
+                  url: null,
+                  start: Tone.Transport.seconds,
+                  duration: 0,
+                  volume: 1,
+                  isRecordingClip: true,
+                },
+              ],
+            }
           : t
       )
     );
-
-    setIsRecording({
-      mic,
-      rec,
-      startTime: Tone.Transport.seconds,
-    });
   };
-
-  const recordingRef = useRef(isRecording);
-  recordingRef.current = isRecording;
-  
-  useEffect(() => {
-    let id;
-  
-    const updateDuration = () => {
-      const currentRecording = recordingRef.current;
-      if (!currentRecording || !selectedTrackId) return;
-  
-      setTracks((prevTracks) =>
-        prevTracks.map((t) =>
-          t.id === selectedTrackId
-            ? {
-                ...t,
-                clips: t.clips.map((clip) =>
-                  clip.isRecordingClip
-                    ? { ...clip, duration: Tone.Transport.seconds - clip.start }
-                    : clip
-                ),
-              }
-            : t
-        )
-      );
-  
-      id = requestAnimationFrame(updateDuration);
-    };
-  
-    id = requestAnimationFrame(updateDuration);
-    return () => cancelAnimationFrame(id);
-  }, []);
-  
 
   const stopRecording = async () => {
-    if (!isRecording || !selectedTrackId) return;
-    const recording = await isRecording.rec.stop();
-    const blob = new Blob([recording], { type: "audio/wav" });
-    const url = URL.createObjectURL(blob);
+    if (!recordingSession.current || !selectedTrackId) return;
 
-    const clip = {
-      url,
-      start: isRecording.startTime,
-      duration: 0,
-      volume: 1,
-    };
+    const { mic, rec, startTime } = recordingSession.current;
 
-    const player = new Tone.Player({
-      url,
-      autostart: false,
-      onload: () => {
-        clip.duration = player.buffer.duration;
-        const track = tracks.find((t) => t.id === selectedTrackId);
-        if (!track) return;
-        player.connect(track.gainNode);
-        player.sync().start(clip.start);
+    try {
+      const recording = await rec.stop();
+      const blob = new Blob([recording], { type: "audio/wav" });
+      const url = URL.createObjectURL(blob);
 
-        setTracks((prevTracks) =>
-          prevTracks.map((t) =>
-            t.id === selectedTrackId
-              ? {
-                ...t,
-                clips: [
-                  ...t.clips.filter((c) => !c.isRecordingClip),
-                  clip,
-                ],
-              }
-              : t
-          )
-        );
+      const clip = {
+        url,
+        start: startTime,
+        duration: 0,
+        volume: 1,
+      };
 
-        setIsRecording(false);
-      },
-    });
+      const player = new Tone.Player({
+        url,
+        autostart: false,
+        onload: () => {
+          clip.duration = player.buffer.duration;
+          const track = tracks.find((t) => t.id === selectedTrackId);
+          if (!track) return;
 
-    isRecording.mic.disconnect();
+          player.connect(track.gainNode);
+          player.sync().start(clip.start);
+
+          setTimeout(() => {
+            player.unsync();
+            player.dispose();
+          }, (clip.duration + 1) * 1000);
+
+          setTracks((prevTracks) =>
+            prevTracks.map((t) =>
+              t.id === selectedTrackId
+                ? {
+                    ...t,
+                    clips: [...t.clips.filter((c) => !c.isRecordingClip), clip],
+                  }
+                : t
+            )
+          );
+        },
+      });
+
+      mic.disconnect();
+      await mic.close();
+
+      recordingSession.current = null;
+      setIsRecording(false);
+    } catch (err) {
+      console.error("Failed to stop recorder:", err);
+    }
   };
+
   function InstrumentPanel({ instrument, onNotePlay }) {
     const notes = ["C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5"];
     return (
@@ -344,14 +353,15 @@ const startRecording = async () => {
     const sampler = samplers[instrument];
     const time = Tone.Transport.seconds;
 
-    if (!sampler) return;
+    if (!sampler || !track.gainNode) return;
 
-    // Only wait if it's a Sampler
-    if (sampler instanceof Tone.Sampler) {
-      await sampler.loaded;
+    if (sampler instanceof Tone.Sampler || sampler instanceof Tone.MonoSynth) {
+      sampler.connect(track.gainNode); // Ensure routing
+      if (sampler instanceof Tone.Sampler) {
+        await sampler.loaded;
+      }
+      sampler.triggerAttackRelease(note, "8n", Tone.now());
     }
-
-    sampler.triggerAttackRelease(note, "8n", Tone.now());
 
     // Record this note as a clip
     if (isRecording && selectedTrackId === trackId) {
@@ -367,7 +377,6 @@ const startRecording = async () => {
       updateTrackClip(trackId, clip);
     }
   };
-
 
   return (
     <div className="App">
@@ -419,6 +428,10 @@ const startRecording = async () => {
                     <button
                       onClick={() => {
                         const gainNode = new Tone.Gain(1).toDestination();
+                        if (instr === "piano" || instr === "guitar") {
+                          const sampler = samplers[instr];
+                          sampler.connect(gainNode);
+                        }
                         const newTrack = {
                           id: pendingTrackId,
                           clips: [],
