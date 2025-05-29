@@ -6,7 +6,7 @@ import "./App.css";
 import CongratsModal from "./components/CongratsModal";
 import congratsImage from "./assets/lvl2complete.png";
 import { useNavigate } from "react-router-dom";
-import './Playground.css';
+import "./Playground.css";
 
 export default function Lesson2({ unlockFeature }) {
   const [lessonComplete, setLessonComplete] = useState(false);
@@ -17,9 +17,37 @@ export default function Lesson2({ unlockFeature }) {
   const [playheadPosition, setPlayheadPosition] = useState(0);
   const navigate = useNavigate();
   const [showCongrats, setShowCongrats] = useState(false);
+  const [showInstrumentModal, setShowInstrumentModal] = useState(false);
+  const [pendingTrackId, setPendingTrackId] = useState(null);
+  // Define per-instrument samplers
+  const samplers = {
+    piano: new Tone.Sampler({
+      urls: {
+        C4: "C4.mp3",
+        "D#4": "Ds4.mp3",
+        "F#4": "Fs4.mp3",
+        A4: "A4.mp3",
+      },
+      baseUrl: "https://tonejs.github.io/audio/salamander/",
+      onload: () => console.log("Piano loaded!"),
+    }).toDestination(),
+
+    guitar: new Tone.MonoSynth({
+      oscillator: { type: "triangle" },
+      envelope: {
+        attack: 0.005,
+        decay: 0.2,
+        sustain: 0.2,
+        release: 0.8,
+      },
+    }).toDestination(),
+  };
 
   useEffect(() => {
-    const stored = parseInt(localStorage.getItem("highestLessonCompleted") || "0", 10);
+    const stored = parseInt(
+      localStorage.getItem("highestLessonCompleted") || "0",
+      10
+    );
     if (stored >= 2) {
       setLessonComplete(true);
       unlockFeature("compressor");
@@ -27,7 +55,6 @@ export default function Lesson2({ unlockFeature }) {
       unlockFeature("reverb");
     }
   }, []);
-  
 
 
   useEffect(() => {
@@ -47,19 +74,19 @@ export default function Lesson2({ unlockFeature }) {
     unlockFeature("compressor");
     unlockFeature("eq");
     unlockFeature("reverb");
-  
+
     setLessonComplete(true);
     localStorage.setItem("lesson2Complete", "true");
-  
-    const currentProgress = parseInt(localStorage.getItem("highestLessonCompleted") || "0");
+
+    const currentProgress = parseInt(
+      localStorage.getItem("highestLessonCompleted") || "0"
+    );
     if (currentProgress < 2) {
       localStorage.setItem("highestLessonCompleted", "2");
     }
-  
+
     setShowCongrats(true);
   };
-  
-
 
   const onScrubPlayhead = (pos) => {
     Tone.Transport.seconds = pos;
@@ -71,11 +98,13 @@ export default function Lesson2({ unlockFeature }) {
       prev.map((t) =>
         t.id === trackId
           ? {
-            ...t,
-            clips: t.clips.map((clip, i) =>
-              i === clipIndex ? { ...clip, start: Math.max(0, newStart) } : clip
-            ),
-          }
+              ...t,
+              clips: t.clips.map((clip, i) =>
+                i === clipIndex
+                  ? { ...clip, start: Math.max(0, newStart) }
+                  : clip
+              ),
+            }
           : t
       )
     );
@@ -84,7 +113,9 @@ export default function Lesson2({ unlockFeature }) {
   const onDeleteClip = (trackId, clipIndex) => {
     setTracks((prev) =>
       prev.map((t) =>
-        t.id === trackId ? { ...t, clips: t.clips.filter((_, i) => i !== clipIndex) } : t
+        t.id === trackId
+          ? { ...t, clips: t.clips.filter((_, i) => i !== clipIndex) }
+          : t
       )
     );
   };
@@ -94,11 +125,11 @@ export default function Lesson2({ unlockFeature }) {
       prev.map((t) =>
         t.id === trackId
           ? {
-            ...t,
-            clips: t.clips.map((clip, i) =>
-              i === clipIndex ? { ...clip, volume } : clip
-            ),
-          }
+              ...t,
+              clips: t.clips.map((clip, i) =>
+                i === clipIndex ? { ...clip, volume } : clip
+              ),
+            }
           : t
       )
     );
@@ -116,6 +147,8 @@ export default function Lesson2({ unlockFeature }) {
     };
     setTracks([...tracks, newTrack]);
     setSelectedTrackId(id);
+    setShowInstrumentModal(true);
+
   };
 
   const updateTrackVolume = (id, volume) => {
@@ -281,6 +314,59 @@ const startRecording = async () => {
 
     isRecording.mic.disconnect();
   };
+  function InstrumentPanel({ instrument, onNotePlay }) {
+    const notes = ["C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5"];
+    return (
+      <div style={{ display: "flex", gap: "6px", marginTop: "8px" }}>
+        {notes.map((note) => (
+          <button
+            key={note}
+            onClick={() => onNotePlay(note)}
+            style={{
+              padding: "12px",
+              backgroundColor: "#f0f0f0",
+              border: "1px solid #aaa",
+              borderRadius: "4px",
+              cursor: "pointer",
+            }}
+          >
+            {note}
+          </button>
+        ))}
+      </div>
+    );
+  }
+
+  const handleNotePlay = async (trackId, note) => {
+    await Tone.start();
+    const track = tracks.find((t) => t.id === trackId);
+    const instrument = track?.instrument;
+    const sampler = samplers[instrument];
+    const time = Tone.Transport.seconds;
+
+    if (!sampler) return;
+
+    // Only wait if it's a Sampler
+    if (sampler instanceof Tone.Sampler) {
+      await sampler.loaded;
+    }
+
+    sampler.triggerAttackRelease(note, "8n", Tone.now());
+
+    // Record this note as a clip
+    if (isRecording && selectedTrackId === trackId) {
+      const clip = {
+        url: null,
+        note,
+        start: time,
+        duration: Tone.Time("8n").toSeconds(),
+        volume: 1,
+        isVirtual: true,
+      };
+
+      updateTrackClip(trackId, clip);
+    }
+  };
 
 
   return (
@@ -303,6 +389,71 @@ const startRecording = async () => {
           Delete Track
         </button>
         <button onClick={() => onScrubPlayhead(0)}>Reset Playhead</button>
+        {showInstrumentModal && (
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              backgroundColor: "rgba(0,0,0,0.5)",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              zIndex: 1000,
+            }}
+          >
+            <div
+              style={{
+                background: "#fff",
+                padding: "24px",
+                borderRadius: "8px",
+                minWidth: "300px",
+              }}
+            >
+              <h3>Select an Instrument</h3>
+              <ul style={{ listStyle: "none", padding: 0 }}>
+                {["voice", "piano", "guitar", "drums"].map((instr) => (
+                  <li key={instr}>
+                    <button
+                      onClick={() => {
+                        const gainNode = new Tone.Gain(1).toDestination();
+                        const newTrack = {
+                          id: pendingTrackId,
+                          clips: [],
+                          volume: 1,
+                          muted: false,
+                          instrument: instr,
+                          gainNode,
+                        };
+                        setTracks((prev) => [...prev, newTrack]);
+                        setShowInstrumentModal(false);
+                        setPendingTrackId(null);
+                      }}
+                      style={{
+                        margin: "6px 0",
+                        padding: "8px 12px",
+                        width: "100%",
+                        textAlign: "left",
+                        fontSize: "16px",
+                      }}
+                    >
+                      🎵 {instr.charAt(0).toUpperCase() + instr.slice(1)}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <button
+                onClick={() => setShowInstrumentModal(false)}
+                style={{ marginTop: "12px" }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
         <br />
         <label>Playhead:</label>
         <input
@@ -329,11 +480,20 @@ const startRecording = async () => {
         onToggleMute={toggleMuteTrack}
         isRecording={isRecording}
       />
+
+      {tracks.map((track) =>
+        track.instrument !== "voice" ? (
+          <InstrumentPanel
+            key={track.id}
+            instrument={track.instrument}
+            onNotePlay={(note) => handleNotePlay(track.id, note)}
+            isRecording={isRecording}
+          />
+        ) : null
+      )}
+
       <div style={{ position: "fixed", bottom: "20px" }}>
-        <button
-          onClick={handleLessonComplete}
-          disabled={lessonComplete}
-        >
+        <button onClick={handleLessonComplete} disabled={lessonComplete}>
           {lessonComplete ? "✅ Lesson Completed" : "Mark Lesson Complete"}
         </button>
       </div>
