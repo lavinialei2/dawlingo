@@ -65,6 +65,9 @@ const PianoPanel = ({
         isHeld: true,
       };
       updateTrackClip(selectedTrackId, clip);
+      if (onNotePlayed) {
+        onNotePlayed({ note, time });
+      }      
     }
 
     setPressedNotes(prev => new Set(prev).add(note));
