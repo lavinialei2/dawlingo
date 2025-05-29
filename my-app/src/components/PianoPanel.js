@@ -1,6 +1,15 @@
 import * as Tone from "tone";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 
+// Static key mapping (safe to define outside the component)
+const keyMap = {
+  q: "C3", w: "D3", e: "E3", r: "F3", t: "G3",
+  y: "A3", u: "B3", i: "C4", o: "D4", p: "E4", "[": "F4", "]": "G4",
+  z: "A4", x: "B4", c: "C5", v: "D5", b: "E5", n: "F5", m: "G5", ",": "A5", ".": "B5", "/": "C6",
+  "2": "C#3", "3": "D#3", "5": "F#3", "6": "G#3", "7": "A#3",
+  "9": "C#4", "0": "D#4", "=": "F#4",
+  a: "G#4", s: "A#4", f: "C#5", g: "D#5", j: "F#5", k: "G#5", l: "A#5"
+};
 
 const PianoPanel = ({
   disabled,
@@ -8,7 +17,6 @@ const PianoPanel = ({
   selectedTrackId,
   updateTrackClip
 }) => {
-
   const whiteNotes = [
     "C3", "D3", "E3", "F3", "G3", "A3", "B3",
     "C4", "D4", "E4", "F4", "G4", "A4", "B4",
@@ -28,8 +36,8 @@ const PianoPanel = ({
   const whiteKeyHeight = 160;
   const blackKeyHeight = 120;
   const blackKeyOffset = keyWidth / 2;
-  const [pressedNotes, setPressedNotes] = useState(new Set());
 
+  const [pressedNotes, setPressedNotes] = useState(new Set());
   const samplerRef = useRef(null);
 
   useEffect(() => {
@@ -47,53 +55,63 @@ const PianoPanel = ({
     return () => samplerRef.current.dispose();
   }, []);
 
-  const handleNotePlay = async (note) => {
+  const handleNoteDown = useCallback(async (note) => {
     await Tone.start();
     if (!samplerRef.current) return;
-    samplerRef.current.triggerAttackRelease(note, "8n", Tone.now());
-  
+    samplerRef.current.triggerAttack(note);
+
     if (isRecording && selectedTrackId) {
       const time = Tone.Transport.seconds;
       const clip = {
         url: null,
         note,
         start: time,
-        duration: Tone.Time("8n").toSeconds(),
+        duration: 0,
         volume: 1,
         isVirtual: true,
+        isHeld: true,
       };
       updateTrackClip(selectedTrackId, clip);
     }
-  };  
 
+    setPressedNotes(prev => new Set(prev).add(note));
+  }, [isRecording, selectedTrackId, updateTrackClip]);
 
-  const keyMap = {
-    q: "C3", w: "D3", e: "E3", r: "F3", t: "G3",
-    y: "A3", u: "B3", i: "C4", o: "D4", p: "E4", "[": "F4", "]": "G4",
-    z: "A4", x: "B4", c: "C5", v: "D5", b: "E5", n: "F5", m: "G5", ",": "A5", ".": "B5", "/": "C6",
-    "2": "C#3", "3": "D#3", "5": "F#3", "6": "G#3", "7": "A#3",
-    "9": "C#4", "0": "D#4", "=": "F#4",
-    a: "G#4", s: "A#4", f: "C#5", g: "D#5", j: "F#5", k: "G#5", l: "A#5"
-  };
+  const handleNoteUp = useCallback((note) => {
+    if (!samplerRef.current) return;
+    samplerRef.current.triggerRelease(note);
+
+    if (isRecording && selectedTrackId) {
+      const endTime = Tone.Transport.seconds;
+      updateTrackClip(selectedTrackId, prevClips =>
+        prevClips.map(clip =>
+          clip.note === note && clip.isHeld && clip.duration === 0
+            ? { ...clip, duration: endTime - clip.start, isHeld: false }
+            : clip
+        )
+      );
+    }
+
+    setPressedNotes(prev => {
+      const next = new Set(prev);
+      next.delete(note);
+      return next;
+    });
+  }, [isRecording, selectedTrackId, updateTrackClip]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (disabled) return;
       const note = keyMap[e.key.toLowerCase()];
       if (note && !pressedNotes.has(note)) {
-        setPressedNotes((prev) => new Set(prev).add(note));
-        handleNotePlay(note);
+        handleNoteDown(note);
       }
     };
 
     const handleKeyUp = (e) => {
       const note = keyMap[e.key.toLowerCase()];
       if (note) {
-        setPressedNotes((prev) => {
-          const next = new Set(prev);
-          next.delete(note);
-          return next;
-        });
+        handleNoteUp(note);
       }
     };
 
@@ -103,7 +121,16 @@ const PianoPanel = ({
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, [disabled, handleNotePlay, pressedNotes]);
+  }, [disabled, handleNoteDown, handleNoteUp, pressedNotes]);
+
+  const handleNoteMouseDown = (note) => {
+    if (disabled) return;
+    handleNoteDown(note);
+  };
+
+  const handleNoteMouseUp = (note) => {
+    handleNoteUp(note);
+  };
 
   return (
     <div style={{ marginTop: "1rem" }}>
@@ -111,11 +138,12 @@ const PianoPanel = ({
         🎹 Piano {disabled ? "(Locked)" : ""}
       </h4>
       <div style={{ position: "relative", height: whiteKeyHeight, width: whiteNotes.length * keyWidth }}>
-        {/* White keys */}
         {whiteNotes.map((note, i) => (
           <button
             key={note}
-            onClick={() => handleNotePlay(note)}
+            onMouseDown={() => handleNoteMouseDown(note)}
+            onMouseUp={() => handleNoteMouseUp(note)}
+            onMouseLeave={() => handleNoteMouseUp(note)}
             disabled={disabled}
             style={{
               position: "absolute",
@@ -138,11 +166,12 @@ const PianoPanel = ({
             {note}
           </button>
         ))}
-        {/* Black keys */}
         {blackNotes.map(({ note, position }) => (
           <button
             key={note}
-            onClick={() => handleNotePlay(note)}
+            onMouseDown={() => handleNoteMouseDown(note)}
+            onMouseUp={() => handleNoteMouseUp(note)}
+            onMouseLeave={() => handleNoteMouseUp(note)}
             disabled={disabled}
             style={{
               position: "absolute",
