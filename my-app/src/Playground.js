@@ -3,11 +3,12 @@ import TransportControls from "./components/TransportControls";
 import Timeline from "./components/Timeline";
 import "./App.css";
 import * as Tone from "tone";
-import TrackList from "./components/TrackList";
 import { useNavigate } from 'react-router-dom';
 import './Playground.css';
 import PlaygroundIntroModal from './components/PlaygroundIntroModal';
 import playgroundIntro from './assets/playgroundIntro.png'
+import LiveWaveform from "./components/LiveWaveform";
+
 
 const Playground = ({ featureLocks }) => {
 
@@ -79,19 +80,19 @@ const Playground = ({ featureLocks }) => {
       [...prevTracks.map((t) =>
         t.id === selectedTrackId
           ? {
-              ...t,
-              clips: t.clips.map((clip) =>
-                clip.isRecordingClip
-                  ? { ...clip, duration: Tone.Transport.seconds - clip.start }
-                  : clip
-              ),
-            }
+            ...t,
+            clips: t.clips.map((clip) =>
+              clip.isRecordingClip
+                ? { ...clip, duration: Tone.Transport.seconds - clip.start }
+                : clip
+            ),
+          }
           : t
       )]
-    );    
+    );
   };
 
-  
+
 
   const onDeleteClip = (trackId, clipIndex) => {
     setTracks((prev) =>
@@ -177,7 +178,7 @@ const Playground = ({ featureLocks }) => {
   const startRecording = async () => {
     if (!selectedTrackId) return;
 
-    await Tone.start(); // ensures audio context is resumed
+    await Tone.start();
     const mic = new Tone.UserMedia();
     await mic.open();
 
@@ -185,16 +186,19 @@ const Playground = ({ featureLocks }) => {
     mic.connect(rec);
     rec.start();
 
-    // if not already playing, start the transport
     if (Tone.Transport.state !== "started") {
       Tone.Transport.start();
     }
 
-
-    // also make sure your app state reflects that playback is running
     setIsPlaying(true);
 
-    // create temporary live clip
+    // 🔍 NEW: AnalyserNode for waveform
+    const analyser = Tone.context.createAnalyser();
+    analyser.fftSize = 2048;
+
+    // Hacky way to access media stream node directly from Tone.UserMedia
+    mic._mediaStream.connect(analyser);
+
     setTracks((prevTracks) =>
       prevTracks.map((t) =>
         t.id === selectedTrackId
@@ -219,44 +223,46 @@ const Playground = ({ featureLocks }) => {
       mic,
       rec,
       startTime: Tone.Transport.seconds,
+      analyser, // 📦 Store analyser for waveform
     });
   };
 
+
   const recordingRef = useRef(isRecording);
   recordingRef.current = isRecording;
-  
+
   useEffect(() => {
     let id;
-  
+
     if (!isRecording || !selectedTrackId) return;
-  
+
     const updateDuration = () => {
       const now = Tone.Transport.seconds;
-  
+
       setTracks((prevTracks) =>
         [...prevTracks.map((t) =>
           t.id === selectedTrackId
             ? {
-                ...t,
-                clips: t.clips.map((clip) =>
-                  clip.isRecordingClip
-                    ? { ...clip, duration: now - clip.start }
-                    : clip
-                ),
-              }
+              ...t,
+              clips: t.clips.map((clip) =>
+                clip.isRecordingClip
+                  ? { ...clip, duration: now - clip.start }
+                  : clip
+              ),
+            }
             : t
         )]
       );
-  
+
       id = requestAnimationFrame(updateDuration);
     };
-  
+
     id = requestAnimationFrame(updateDuration);
-  
+
     return () => cancelAnimationFrame(id);
   }, [isRecording, selectedTrackId]);
-  
-  
+
+
 
   const stopRecording = async () => {
     if (!isRecording || !selectedTrackId) return;
@@ -269,7 +275,9 @@ const Playground = ({ featureLocks }) => {
       start: isRecording.startTime,
       duration: 0,
       volume: 1,
+      waveform: null, // temp — will be filled later
     };
+    
 
     const player = new Tone.Player({
       url,
@@ -376,6 +384,13 @@ const Playground = ({ featureLocks }) => {
           onVolumeChange={updateTrackVolume}
           onToggleMute={toggleMuteTrack}
         />
+        {isRecording && isRecording.analyser && (
+          <div>
+            <h4 style={{ color: "#ccc" }}>Live Waveform</h4>
+            <LiveWaveform analyser={isRecording.analyser} />
+          </div>
+        )}
+
         <div style={{ marginTop: "2rem" }}>
           {renderEffectButton("Compressor", featureLocks.compressor, () => setShowCompressor(true))}
           {renderEffectButton("EQ", featureLocks.eq, () => setShowEQ(true))}

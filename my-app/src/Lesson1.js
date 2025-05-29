@@ -10,7 +10,6 @@ import { useNavigate } from "react-router-dom";
 import './Playground.css';
 import './Lessons.css'
 import lessons from './Lessons';
-import {useRef} from 'react'
 
 export default function Lesson1({ onLessonComplete }) {
   const navigate = useNavigate();
