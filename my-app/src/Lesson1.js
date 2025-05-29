@@ -206,9 +206,14 @@ export default function Lesson1({ onLessonComplete }) {
         if (t.id !== id) return t;
         const newMuted = !t.muted;
         if (t.gainNode) t.gainNode.gain.value = newMuted ? 0 : t.volume;
-        return { ...t, muted: !t.muted };
+        return { ...t, muted: newMuted };
       })
     );
+  
+    // 🔑 Mark step complete if this is the mute step
+    if (lesson[stepIndex]?.target === "mute") {
+      setHasInteracted(true);
+    }
   };
 
   const deleteSelectedTrack = () => {
@@ -232,7 +237,7 @@ export default function Lesson1({ onLessonComplete }) {
   const startRecording = async () => {
     if (!selectedTrackId) return;
 
-    await Tone.start(); // ensures audio context is resumed
+    await Tone.start();
     const mic = new Tone.UserMedia();
     await mic.open();
 
@@ -240,16 +245,19 @@ export default function Lesson1({ onLessonComplete }) {
     mic.connect(rec);
     rec.start();
 
-    // if not already playing, start the transport
     if (Tone.Transport.state !== "started") {
       Tone.Transport.start();
     }
 
-
-    // also make sure your app state reflects that playback is running
     setIsPlaying(true);
 
-    // create temporary live clip
+    // 🔍 NEW: AnalyserNode for waveform
+    const analyser = Tone.context.createAnalyser();
+    analyser.fftSize = 2048;
+
+    // Hacky way to access media stream node directly from Tone.UserMedia
+    mic._mediaStream.connect(analyser);
+
     setTracks((prevTracks) =>
       prevTracks.map((t) =>
         t.id === selectedTrackId
@@ -274,41 +282,46 @@ export default function Lesson1({ onLessonComplete }) {
       mic,
       rec,
       startTime: Tone.Transport.seconds,
+      analyser, // 📦 Store analyser for waveform
     });
   };
 
+
   const recordingRef = useRef(isRecording);
   recordingRef.current = isRecording;
-  
+
   useEffect(() => {
     let id;
-  
+
+    if (!isRecording || !selectedTrackId) return;
+
     const updateDuration = () => {
-      const currentRecording = recordingRef.current;
-      if (!currentRecording || !selectedTrackId) return;
-  
+      const now = Tone.Transport.seconds;
+
       setTracks((prevTracks) =>
-        prevTracks.map((t) =>
+        [...prevTracks.map((t) =>
           t.id === selectedTrackId
             ? {
-                ...t,
-                clips: t.clips.map((clip) =>
-                  clip.isRecordingClip
-                    ? { ...clip, duration: Tone.Transport.seconds - clip.start }
-                    : clip
-                ),
-              }
+              ...t,
+              clips: t.clips.map((clip) =>
+                clip.isRecordingClip
+                  ? { ...clip, duration: now - clip.start }
+                  : clip
+              ),
+            }
             : t
-        )
+        )]
       );
-  
+
       id = requestAnimationFrame(updateDuration);
     };
-  
+
     id = requestAnimationFrame(updateDuration);
+
     return () => cancelAnimationFrame(id);
-  }, []);
-  
+  }, [isRecording, selectedTrackId]);
+
+
 
   const stopRecording = async () => {
     if (!isRecording || !selectedTrackId) return;
@@ -321,7 +334,9 @@ export default function Lesson1({ onLessonComplete }) {
       start: isRecording.startTime,
       duration: 0,
       volume: 1,
+      waveform: null, // temp — will be filled later
     };
+    
 
     const player = new Tone.Player({
       url,
@@ -353,6 +368,7 @@ export default function Lesson1({ onLessonComplete }) {
 
     isRecording.mic.disconnect();
   };
+
 
 
   const handleLessonComplete = () => {

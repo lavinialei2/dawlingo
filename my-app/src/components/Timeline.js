@@ -171,7 +171,7 @@ export default function Timeline({
               {/* Volume */}
               <input
                 type="range"
-                className={lesson[stepIndex]?.target === "volume" ? "highlight-button" : ""}
+                className={(lesson?.[stepIndex]?.target === "volume") ? "highlight-button" : ""}
                 ref={volumeRef}
                 min={0}
                 max={1}
@@ -179,20 +179,20 @@ export default function Timeline({
                 value={track.volume}
                 onChange={(e) => {
                   onVolumeChange(track.id, parseFloat(e.target.value));
-                  if (lesson[stepIndex]?.target === "volume") {
+                  if (lesson?.[stepIndex]?.target === "volume") {
                     setHasInteracted(true);
                   }
                 }}
               />
             </label>
             <button
-              className={`mute-button ${lesson[stepIndex]?.target === "mute" ? "highlight-button" : ""}`}
+              className={`mute-button ${(lesson?.[stepIndex]?.target === "mute") ? "highlight-button" : ""}`}
               ref={muteRef}
               onClick={() => {
               onToggleMute(track.id);
-              if (lesson[stepIndex]?.target === "mute") {
+              if (lesson?.[stepIndex]?.target === "volume") {
                 setHasInteracted(true);
-              }
+              }              
             }}
               style={{ fontSize: "10px" }}
             >
