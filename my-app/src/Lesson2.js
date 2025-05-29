@@ -1,8 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import TransportControls from "./components/TransportControls";
 import Timeline from "./components/Timeline";
 import * as Tone from "tone";
 import "./App.css";
+import CongratsModal from "./components/CongratsModal";
+import congratsImage from "./assets/lvl2complete.png";
+import { useNavigate } from "react-router-dom";
+import './Playground.css';
 
 export default function Lesson2({ unlockFeature }) {
   const [lessonComplete, setLessonComplete] = useState(false);
@@ -11,34 +15,51 @@ export default function Lesson2({ unlockFeature }) {
   const [selectedTrackId, setSelectedTrackId] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
   const [playheadPosition, setPlayheadPosition] = useState(0);
+  const navigate = useNavigate();
+  const [showCongrats, setShowCongrats] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem("lesson2Complete");
-    if (stored === "true") {
+    const stored = parseInt(localStorage.getItem("highestLessonCompleted") || "0", 10);
+    if (stored >= 2) {
       setLessonComplete(true);
       unlockFeature("compressor");
       unlockFeature("eq");
       unlockFeature("reverb");
     }
-  }, [unlockFeature]);
+  }, []);
+  
+
 
   useEffect(() => {
     let id;
+
     const update = () => {
       setPlayheadPosition(Tone.Transport.seconds);
       id = requestAnimationFrame(update);
     };
-    if (isPlaying) id = requestAnimationFrame(update);
+
+    id = requestAnimationFrame(update); // always run the loop
+
     return () => cancelAnimationFrame(id);
-  }, [isPlaying]);
+  }, []);
 
   const handleLessonComplete = () => {
     unlockFeature("compressor");
     unlockFeature("eq");
     unlockFeature("reverb");
+  
     setLessonComplete(true);
     localStorage.setItem("lesson2Complete", "true");
+  
+    const currentProgress = parseInt(localStorage.getItem("highestLessonCompleted") || "0");
+    if (currentProgress < 2) {
+      localStorage.setItem("highestLessonCompleted", "2");
+    }
+  
+    setShowCongrats(true);
   };
+  
+
 
   const onScrubPlayhead = (pos) => {
     Tone.Transport.seconds = pos;
@@ -50,11 +71,11 @@ export default function Lesson2({ unlockFeature }) {
       prev.map((t) =>
         t.id === trackId
           ? {
-              ...t,
-              clips: t.clips.map((clip, i) =>
-                i === clipIndex ? { ...clip, start: Math.max(0, newStart) } : clip
-              ),
-            }
+            ...t,
+            clips: t.clips.map((clip, i) =>
+              i === clipIndex ? { ...clip, start: Math.max(0, newStart) } : clip
+            ),
+          }
           : t
       )
     );
@@ -73,19 +94,20 @@ export default function Lesson2({ unlockFeature }) {
       prev.map((t) =>
         t.id === trackId
           ? {
-              ...t,
-              clips: t.clips.map((clip, i) =>
-                i === clipIndex ? { ...clip, volume } : clip
-              ),
-            }
+            ...t,
+            clips: t.clips.map((clip, i) =>
+              i === clipIndex ? { ...clip, volume } : clip
+            ),
+          }
           : t
       )
     );
   };
 
   const addTrack = () => {
+    const id = Date.now();
     const newTrack = {
-      id: Date.now(),
+      id,
       clips: [],
       volume: 1,
       muted: false,
@@ -93,6 +115,7 @@ export default function Lesson2({ unlockFeature }) {
       gainNode: new Tone.Gain(1).toDestination(),
     };
     setTracks([...tracks, newTrack]);
+    setSelectedTrackId(id);
   };
 
   const updateTrackVolume = (id, volume) => {
@@ -134,28 +157,100 @@ export default function Lesson2({ unlockFeature }) {
     setSelectedTrackId(id);
   };
 
-  const startRecording = async () => {
+const startRecording = async () => {
     if (!selectedTrackId) return;
-    await Tone.start();
+
+    await Tone.start(); // ensures audio context is resumed
     const mic = new Tone.UserMedia();
     await mic.open();
+
     const rec = new Tone.Recorder();
     mic.connect(rec);
     rec.start();
-    setIsRecording({ mic, rec, startTime: Tone.Transport.seconds });
+
+    // if not already playing, start the transport
+    if (Tone.Transport.state !== "started") {
+      Tone.Transport.start();
+    }
+
+
+    // also make sure your app state reflects that playback is running
+    setIsPlaying(true);
+
+    // create temporary live clip
+    setTracks((prevTracks) =>
+      prevTracks.map((t) =>
+        t.id === selectedTrackId
+          ? {
+            ...t,
+            clips: [
+              ...t.clips,
+              {
+                url: null,
+                start: Tone.Transport.seconds,
+                duration: 0,
+                volume: 1,
+                isRecordingClip: true,
+              },
+            ],
+          }
+          : t
+      )
+    );
+
+    setIsRecording({
+      mic,
+      rec,
+      startTime: Tone.Transport.seconds,
+    });
   };
+
+  const recordingRef = useRef(isRecording);
+  recordingRef.current = isRecording;
+  
+  useEffect(() => {
+    let id;
+  
+    const updateDuration = () => {
+      const currentRecording = recordingRef.current;
+      if (!currentRecording || !selectedTrackId) return;
+  
+      setTracks((prevTracks) =>
+        prevTracks.map((t) =>
+          t.id === selectedTrackId
+            ? {
+                ...t,
+                clips: t.clips.map((clip) =>
+                  clip.isRecordingClip
+                    ? { ...clip, duration: Tone.Transport.seconds - clip.start }
+                    : clip
+                ),
+              }
+            : t
+        )
+      );
+  
+      id = requestAnimationFrame(updateDuration);
+    };
+  
+    id = requestAnimationFrame(updateDuration);
+    return () => cancelAnimationFrame(id);
+  }, []);
+  
 
   const stopRecording = async () => {
     if (!isRecording || !selectedTrackId) return;
     const recording = await isRecording.rec.stop();
     const blob = new Blob([recording], { type: "audio/wav" });
     const url = URL.createObjectURL(blob);
+
     const clip = {
       url,
       start: isRecording.startTime,
       duration: 0,
       volume: 1,
     };
+
     const player = new Tone.Player({
       url,
       autostart: false,
@@ -165,12 +260,28 @@ export default function Lesson2({ unlockFeature }) {
         if (!track) return;
         player.connect(track.gainNode);
         player.sync().start(clip.start);
-        updateTrackClip(selectedTrackId, clip);
+
+        setTracks((prevTracks) =>
+          prevTracks.map((t) =>
+            t.id === selectedTrackId
+              ? {
+                ...t,
+                clips: [
+                  ...t.clips.filter((c) => !c.isRecordingClip),
+                  clip,
+                ],
+              }
+              : t
+          )
+        );
+
         setIsRecording(false);
       },
     });
+
     isRecording.mic.disconnect();
   };
+
 
   return (
     <div className="App">
@@ -226,6 +337,19 @@ export default function Lesson2({ unlockFeature }) {
           {lessonComplete ? "✅ Lesson Completed" : "Mark Lesson Complete"}
         </button>
       </div>
+      {showCongrats && (
+        <CongratsModal
+          image={congratsImage}
+          onClose={() => {
+            setShowCongrats(false);
+          }}
+          onReturnHome={() => {
+            setTimeout(() => {
+              navigate("/home");
+            }, 50);
+          }}
+        />
+      )}
     </div>
   );
 }

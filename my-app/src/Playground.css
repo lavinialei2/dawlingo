@@ -18,6 +18,7 @@
 /* Dark background for overall app */
 .playground-container {
   background-color: #242424;
+  position: relative;
   color: #ffffff;
   min-height: 100vh;
   padding: 20px;
@@ -27,6 +28,7 @@
 /* Control buttons */
 .playground-controls button {
   margin: 8px;
+  position: relative;
   padding: 8px 16px;
   border: none;
   border-radius: 6px;
@@ -40,8 +42,8 @@
   margin-top: 20px;
 }
 
-.playground-controls button:hover {
-  background-color: #666;
+.playground-controls button:not(:disabled):hover {
+  transform: scale(1.05);
 }
 
 .playground-controls button:disabled {
@@ -51,7 +53,8 @@
 
 /* Input slider */
 input[type='range'] {
-  width: 100%;
+  width: 90%;
+  margin-left: 8px;
   margin-top: 10px;
   accent-color: #6a5acd;
 }
@@ -60,16 +63,19 @@ input[type='range'] {
   padding: 8px 16px;
   margin: 8px;
   border: none;
-  width: 8rem;
+  min-width: 8rem;
   height: 2.5rem;
   border-radius: 6px;
-  background-color: #242424;
+  background-color: #000000;
+  opacity: 75%;
   color: #fff;
   cursor: pointer;
   font-size: 1rem;
   font-weight: bold;
+  border-radius: 9999px;
 }
 
 .home-button:hover {
-  background-color: #666;
+  transform: scale(1.05);
 }
+

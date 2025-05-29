@@ -1,0 +1,17 @@
+.progress-button{
+    background-color: #d9468f;
+    font-family: sans-serif;
+    border: none;
+    cursor: pointer;
+    border-radius: 9999px;
+}
+
+.progress-button:hover{
+    transform: scale(1.05);
+}
+
+.progress-button-bottom-right{
+    position: fixed;  
+    bottom: 20px;     
+    right: 30px; 
+}
