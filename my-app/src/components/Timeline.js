@@ -256,7 +256,7 @@ export default function Timeline({
             }}
           >
             {track.clips
-              .filter((clip) => clip.url || clip.isRecordingClip) // allow recording clips with no URL
+              .filter((clip) => clip.url || clip.isVirtual || clip.isRecordingClip)
               .map((clip, clipIndex) => {
                 const clipStartPercent = (clip.start / numBeats) * 100;
                 const clipWidthPercent = (clip.duration / numBeats) * 100;

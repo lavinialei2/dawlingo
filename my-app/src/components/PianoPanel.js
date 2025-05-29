@@ -48,53 +48,69 @@ const PianoPanel = ({
   const [pressedNotes, setPressedNotes] = useState(new Set());
 
   const handleNoteDown = useCallback(async (note) => {
+    if (disabled || pressedNotes.has(note)) return;
+  
     await Tone.start();
-    if (!samplers.piano) return;
-    samplers.piano.triggerAttack(note);
-
-
-    if (isRecording && selectedTrackId) {
-      const time = Tone.Transport.seconds;
-      const clip = {
-        url: null,
-        note,
-        start: time,
-        duration: 0,
-        volume: 1,
-        isVirtual: true,
-        isHeld: true,
-      };
-      updateTrackClip(selectedTrackId, clip);
-      if (onNotePlayed) {
-        onNotePlayed({ note, time });
-      }      
-    }
-
+    const now = Tone.immediate();
+    const transportNow = Tone.Transport.seconds;
+  
+    samplers.piano.triggerAttack(note, now);
     setPressedNotes(prev => new Set(prev).add(note));
-  }, [isRecording, selectedTrackId, updateTrackClip]);
-
-  const handleNoteUp = useCallback((note) => {
-    if (!samplers.piano) return;
-    samplers.piano.triggerRelease(note);
-
-
+  
     if (isRecording && selectedTrackId) {
-      const endTime = Tone.Transport.seconds;
-      updateTrackClip(selectedTrackId, prevClips =>
-        prevClips.map(clip =>
-          clip.note === note && clip.isHeld && clip.duration === 0
-            ? { ...clip, duration: endTime - clip.start, isHeld: false }
+      updateTrackClip(selectedTrackId, (clips) =>
+        clips.map((clip) =>
+          clip.isRecordingClip && clip.isVirtual
+            ? {
+                ...clip,
+                notes: [
+                  ...(clip.notes || []),
+                  { note, start: transportNow, isHeld: true }, // <–– Save start only
+                ],
+              }
             : clip
         )
       );
     }
+  }, [disabled, pressedNotes, isRecording, selectedTrackId, updateTrackClip]);
+  
 
+  const handleNoteUp = useCallback((note) => {
+    if (!pressedNotes.has(note)) return;
+  
+    const now = Tone.immediate();
+    const transportNow = Tone.Transport.seconds;
+  
+    samplers.piano.triggerRelease(note, now);
     setPressedNotes(prev => {
       const next = new Set(prev);
       next.delete(note);
       return next;
     });
-  }, [isRecording, selectedTrackId, updateTrackClip]);
+  
+    if (isRecording && selectedTrackId) {
+      updateTrackClip(selectedTrackId, (clips) =>
+        clips.map((clip) =>
+          clip.isRecordingClip && clip.isVirtual
+            ? {
+                ...clip,
+                notes: clip.notes.map((n) =>
+                  n.note === note && n.isHeld
+                    ? {
+                        ...n,
+                        duration: transportNow - n.start,
+                        isHeld: false,
+                      }
+                    : n
+                ),
+              }
+            : clip
+        )
+      );
+    }
+  }, [pressedNotes, isRecording, selectedTrackId, updateTrackClip]);
+  
+
 
   useEffect(() => {
     const handleKeyDown = (e) => {

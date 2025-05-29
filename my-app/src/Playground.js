@@ -30,12 +30,9 @@ const Playground = ({ featureLocks }) => {
   const scheduledParts = useRef([]);
 
   useEffect(() => {
-    if (!isPlaying) return;
+    if (!isPlaying || isRecording) return; // 🔒 Do NOT schedule playback while recording
 
-    // Clean up any previous scheduled parts
-    scheduledParts.current.forEach(part => {
-      part.dispose();
-    });
+    scheduledParts.current.forEach(part => part.dispose());
     scheduledParts.current = [];
 
     tracks.forEach((track) => {
@@ -44,17 +41,12 @@ const Playground = ({ featureLocks }) => {
       track.clips.forEach((clip) => {
         if (!clip.notes || clip.notes.length === 0) return;
 
-        const part = new Tone.Part((time, { note }) => {
-          samplers.piano.triggerAttackRelease(note, "8n", time);
-        }, clip.notes.map(({ note, time }) => [clip.start + time, { note }]));
+        const part = new Tone.Part((time, { note, duration }) => {
+          samplers.piano.triggerAttackRelease(note, duration || "8n", time);
+        }, clip.notes.map(({ note, start, duration }) => [clip.start + start, { note, duration }]));
 
-        part.start(0); // Time is relative to the Transport
-
-        // Instead of sync(), manually start Transport and schedule
-        Tone.Transport.scheduleOnce(() => {
-          part.start();
-        }, 0);
-
+        part.start(0);
+        Tone.Transport.scheduleOnce(() => part.start(), 0);
         scheduledParts.current.push(part);
       });
     });
@@ -63,7 +55,7 @@ const Playground = ({ featureLocks }) => {
       scheduledParts.current.forEach(part => part.dispose());
       scheduledParts.current = [];
     };
-  }, [isPlaying, tracks]);
+  }, [isPlaying, isRecording, tracks]);
 
 
 
@@ -548,7 +540,6 @@ const Playground = ({ featureLocks }) => {
           onNotePlayed={({ note, time }) => {
             if (isRecording && selectedTrackId) {
               const now = Tone.Transport.seconds;
-              // Add the note to the recording buffer
               setTracks((prev) =>
                 prev.map((t) =>
                   t.id === selectedTrackId && t.instrument === "piano"
@@ -568,6 +559,7 @@ const Playground = ({ featureLocks }) => {
               );
             }
           }}
+
         />
 
 
