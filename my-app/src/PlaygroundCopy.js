@@ -8,8 +8,6 @@ import './Playground.css';
 import PlaygroundIntroModal from './components/PlaygroundIntroModal';
 import playgroundIntro from './assets/playgroundIntro.png'
 import LiveWaveform from "./components/LiveWaveform";
-import PianoPanel from './components/PianoPanel';
-
 
 
 const Playground = ({ featureLocks }) => {
@@ -279,7 +277,7 @@ const Playground = ({ featureLocks }) => {
       volume: 1,
       waveform: null, // temp — will be filled later
     };
-
+    
 
     const player = new Tone.Player({
       url,
@@ -310,36 +308,6 @@ const Playground = ({ featureLocks }) => {
     });
 
     isRecording.mic.disconnect();
-  };
-
-  const pianoSampler = new Tone.Sampler({
-    urls: {
-      C4: "C4.mp3",
-      "D#4": "Ds4.mp3",
-      "F#4": "Fs4.mp3",
-      A4: "A4.mp3",
-    },
-    baseUrl: "https://tonejs.github.io/audio/salamander/",
-    onload: () => console.log("Piano loaded!"),
-  }).toDestination();
-
-  const handlePianoNotePlay = async (note) => {
-    await Tone.start();
-    await pianoSampler.loaded;
-    pianoSampler.triggerAttackRelease(note, "8n", Tone.now());
-
-    if (isRecording && selectedTrackId) {
-      const time = Tone.Transport.seconds;
-      const clip = {
-        url: null,
-        note,
-        start: time,
-        duration: Tone.Time("8n").toSeconds(),
-        volume: 1,
-        isVirtual: true,
-      };
-      updateTrackClip(selectedTrackId, clip);
-    }
   };
 
 
@@ -416,9 +384,6 @@ const Playground = ({ featureLocks }) => {
           onVolumeChange={updateTrackVolume}
           onToggleMute={toggleMuteTrack}
         />
-
-        <PianoPanel onNotePlay={handlePianoNotePlay} disabled={featureLocks.piano} />
-
         {isRecording && isRecording.analyser && (
           <div>
             <h4 style={{ color: "#ccc" }}>Live Waveform</h4>
@@ -451,7 +416,6 @@ const Playground = ({ featureLocks }) => {
               <button onClick={() => setShowReverb(false)}>Close</button>
             </div>
           )}
-
         </div>
       </div>
       {showIntro && (
