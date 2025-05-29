@@ -11,6 +11,12 @@ const keyMap = {
   a: "G#4", s: "A#4", f: "C#5", g: "D#5", j: "F#5", k: "G#5", l: "A#5"
 };
 
+const noteToKey = {};
+Object.entries(keyMap).forEach(([key, note]) => {
+  noteToKey[note] = key.toUpperCase();
+});
+
+
 const PianoPanel = ({
   disabled,
   isRecording,
@@ -163,7 +169,10 @@ const PianoPanel = ({
               paddingBottom: 4,
             }}
           >
-            {note}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", lineHeight: 1.2 }}>
+              <div style={{ fontSize: 12 }}>{note}</div>
+              <div style={{ fontSize: 12 }}>{noteToKey[note] || ""}</div>
+            </div>
           </button>
         ))}
         {blackNotes.map(({ note, position }) => (
@@ -191,7 +200,10 @@ const PianoPanel = ({
               paddingBottom: 4,
             }}
           >
-            {note}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", lineHeight: 1.2 }}>
+              <div style={{ fontSize: 12 }}>{note}</div>
+              <div style={{ fontSize: 12 }}>{noteToKey[note] || ""}</div>
+            </div>
           </button>
         ))}
       </div>
