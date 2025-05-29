@@ -53,6 +53,7 @@ export default function Lesson2({ unlockFeature }) {
       unlockFeature("compressor");
       unlockFeature("eq");
       unlockFeature("reverb");
+      unlockFeature("piano");
     }
   }, []);
 
@@ -74,6 +75,7 @@ export default function Lesson2({ unlockFeature }) {
     unlockFeature("compressor");
     unlockFeature("eq");
     unlockFeature("reverb");
+    unlockFeature("piano");
 
     setLessonComplete(true);
     localStorage.setItem("lesson2Complete", "true");
