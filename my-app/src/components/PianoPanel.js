@@ -1,6 +1,14 @@
-import React, { useEffect, useState } from "react";
+import * as Tone from "tone";
+import { useEffect, useState, useRef } from "react";
 
-const PianoPanel = ({ onNotePlay, disabled }) => {
+
+const PianoPanel = ({
+  disabled,
+  isRecording,
+  selectedTrackId,
+  updateTrackClip
+}) => {
+
   const whiteNotes = [
     "C3", "D3", "E3", "F3", "G3", "A3", "B3",
     "C4", "D4", "E4", "F4", "G4", "A4", "B4",
@@ -22,6 +30,43 @@ const PianoPanel = ({ onNotePlay, disabled }) => {
   const blackKeyOffset = keyWidth / 2;
   const [pressedNotes, setPressedNotes] = useState(new Set());
 
+  const samplerRef = useRef(null);
+
+  useEffect(() => {
+    samplerRef.current = new Tone.Sampler({
+      urls: {
+        C4: "C4.mp3",
+        "D#4": "Ds4.mp3",
+        "F#4": "Fs4.mp3",
+        A4: "A4.mp3",
+      },
+      baseUrl: "https://tonejs.github.io/audio/salamander/",
+      onload: () => console.log("Piano sampler loaded!"),
+    }).toDestination();
+
+    return () => samplerRef.current.dispose();
+  }, []);
+
+  const handleNotePlay = async (note) => {
+    await Tone.start();
+    if (!samplerRef.current) return;
+    samplerRef.current.triggerAttackRelease(note, "8n", Tone.now());
+  
+    if (isRecording && selectedTrackId) {
+      const time = Tone.Transport.seconds;
+      const clip = {
+        url: null,
+        note,
+        start: time,
+        duration: Tone.Time("8n").toSeconds(),
+        volume: 1,
+        isVirtual: true,
+      };
+      updateTrackClip(selectedTrackId, clip);
+    }
+  };  
+
+
   const keyMap = {
     q: "C3", w: "D3", e: "E3", r: "F3", t: "G3",
     y: "A3", u: "B3", i: "C4", o: "D4", p: "E4", "[": "F4", "]": "G4",
@@ -37,7 +82,7 @@ const PianoPanel = ({ onNotePlay, disabled }) => {
       const note = keyMap[e.key.toLowerCase()];
       if (note && !pressedNotes.has(note)) {
         setPressedNotes((prev) => new Set(prev).add(note));
-        onNotePlay(note);
+        handleNotePlay(note);
       }
     };
 
@@ -58,7 +103,7 @@ const PianoPanel = ({ onNotePlay, disabled }) => {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, [disabled, onNotePlay, pressedNotes]);
+  }, [disabled, handleNotePlay, pressedNotes]);
 
   return (
     <div style={{ marginTop: "1rem" }}>
@@ -70,7 +115,7 @@ const PianoPanel = ({ onNotePlay, disabled }) => {
         {whiteNotes.map((note, i) => (
           <button
             key={note}
-            onClick={() => onNotePlay(note)}
+            onClick={() => handleNotePlay(note)}
             disabled={disabled}
             style={{
               position: "absolute",
@@ -97,7 +142,7 @@ const PianoPanel = ({ onNotePlay, disabled }) => {
         {blackNotes.map(({ note, position }) => (
           <button
             key={note}
-            onClick={() => onNotePlay(note)}
+            onClick={() => handleNotePlay(note)}
             disabled={disabled}
             style={{
               position: "absolute",
