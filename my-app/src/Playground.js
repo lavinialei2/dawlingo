@@ -30,9 +30,9 @@ const Playground = ({ featureLocks }) => {
   const scheduledParts = useRef([]);
 
   useEffect(() => {
-    if (!isPlaying || isRecording) return; // 🔒 Do NOT schedule playback while recording
+    if (!isPlaying || isRecording) return;
 
-    scheduledParts.current.forEach(part => part.dispose());
+    scheduledParts.current.forEach((part) => part.dispose());
     scheduledParts.current = [];
 
     tracks.forEach((track) => {
@@ -41,18 +41,23 @@ const Playground = ({ featureLocks }) => {
       track.clips.forEach((clip) => {
         if (!clip.notes || clip.notes.length === 0) return;
 
-        const part = new Tone.Part((time, { note, duration }) => {
-          samplers.piano.triggerAttackRelease(note, duration || "8n", time);
-        }, clip.notes.map(({ note, start, duration }) => [clip.start + start, { note, duration }]));
-
-        part.start(0);
-        Tone.Transport.scheduleOnce(() => part.start(), 0);
+        const part = new Tone.Part(
+          (time, { note, duration }) => {
+            samplers.piano.triggerAttackRelease(note, duration || "8n", time);
+          },
+          clip.notes.map(({ note, start, duration }) => [
+            start - clip.start, // 🧠 Relative note timing
+            { note, duration },
+          ])
+        );
+        part.start(clip.start); // ⏱ Start this part at the clip’s start
+        
         scheduledParts.current.push(part);
       });
     });
 
     return () => {
-      scheduledParts.current.forEach(part => part.dispose());
+      scheduledParts.current.forEach((part) => part.dispose());
       scheduledParts.current = [];
     };
   }, [isPlaying, isRecording, tracks]);

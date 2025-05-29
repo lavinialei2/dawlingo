@@ -9,6 +9,18 @@ const CONTROL_WIDTH = 160;
 const BEAT_WIDTH = 80;
 const TRACK_HEIGHT = 80;
 const GRID_HEIGHT = 24;
+
+const NOTE_ORDER = [
+  "C6", "B5", "A#5", "A5", "G#5", "G5", "F#5", "F5", "E5", "D#5", "D5", "C#5", "C5",
+  "B4", "A#4", "A4", "G#4", "G4", "F#4", "F4", "E4", "D#4", "D4", "C#4", "C4",
+  "B3", "A#3", "A3", "G#3", "G3", "F#3", "F3", "E3", "D#3", "D3", "C#3", "C3"
+];
+
+const getNoteRowIndex = (note) => NOTE_ORDER.indexOf(note);
+const NOTE_HEIGHT = 2;
+
+
+
 export default function Timeline({
   tracks,
   numBeats,
@@ -290,7 +302,31 @@ export default function Timeline({
                         ? "Recording..."
                         : `Start: ${clip.start.toFixed(2)}s`
                     }
-                  />
+                  >
+                    {clip.notes?.map((note, idx) => {
+                      const noteIndex = getNoteRowIndex(note.note);
+                      if (noteIndex === -1) return null;
+
+                      const top = noteIndex * NOTE_HEIGHT;
+                      const left = ((note.start - clip.start) / clip.duration) * 100;
+                      const width = (note.duration / clip.duration) * 100;
+
+                      return (
+                        <div
+                          key={idx}
+                          style={{
+                            position: "absolute",
+                            top: `${top}px`,
+                            left: `${left}%`,
+                            width: `${width}%`,
+                            height: `${NOTE_HEIGHT}px`,
+                            backgroundColor: "#a6d4fa",
+                          }}
+                        />
+                      );
+                    })}
+
+                  </div>
                 );
               })}
 
