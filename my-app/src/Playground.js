@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import TransportControls from "./components/TransportControls";
 import Timeline from "./components/Timeline";
 import "./App.css";
 import * as Tone from "tone";
-import TrackList from "./components/TrackList";
 import { useNavigate } from 'react-router-dom';
 import './Playground.css';
 import PlaygroundIntroModal from './components/PlaygroundIntroModal';
 import playgroundIntro from './assets/playgroundIntro.png'
+import LiveWaveform from "./components/LiveWaveform";
+
 
 const Playground = ({ featureLocks }) => {
 
@@ -22,12 +23,12 @@ const Playground = ({ featureLocks }) => {
   const [showReverb, setShowReverb] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
 
-useEffect(() => {
-  if (localStorage.getItem("showPlaygroundIntro") === "true") {
-    setShowIntro(true);
-    localStorage.removeItem("showPlaygroundIntro"); 
-  }
-}, []);
+  useEffect(() => {
+    if (localStorage.getItem("showPlaygroundIntro") === "true") {
+      setShowIntro(true);
+      localStorage.removeItem("showPlaygroundIntro");
+    }
+  }, []);
 
   const navigateToHome = () => {
     navigate('/home');
@@ -35,17 +36,18 @@ useEffect(() => {
 
   useEffect(() => {
     let id;
+
     const update = () => {
       setPlayheadPosition(Tone.Transport.seconds);
       id = requestAnimationFrame(update);
     };
 
-    if (isPlaying) {
-      id = requestAnimationFrame(update);
-    }
+    id = requestAnimationFrame(update); // always run the loop
 
     return () => cancelAnimationFrame(id);
-  }, [isPlaying]);
+  }, []);
+
+
 
   // Use space bar on keyboard to control play/pause
   useEffect(() => {
@@ -74,21 +76,23 @@ useEffect(() => {
   };
 
   const onMoveClip = (trackId, clipIndex, newStart) => {
-    setTracks((prev) =>
-      prev.map((t) =>
-        t.id === trackId
+    setTracks((prevTracks) =>
+      [...prevTracks.map((t) =>
+        t.id === selectedTrackId
           ? {
             ...t,
-            clips: t.clips.map((clip, i) =>
-              i === clipIndex
-                ? { ...clip, start: Math.max(0, newStart) }
+            clips: t.clips.map((clip) =>
+              clip.isRecordingClip
+                ? { ...clip, duration: Tone.Transport.seconds - clip.start }
                 : clip
             ),
           }
           : t
-      )
+      )]
     );
   };
+
+
 
   const onDeleteClip = (trackId, clipIndex) => {
     setTracks((prev) =>
@@ -119,8 +123,9 @@ useEffect(() => {
   };
 
   const addTrack = () => {
+    const id = Date.now();
     const newTrack = {
-      id: Date.now(),
+      id,
       clips: [],
       volume: 1,
       muted: false,
@@ -128,6 +133,7 @@ useEffect(() => {
       gainNode: new Tone.Gain(1).toDestination(),
     };
     setTracks([...tracks, newTrack]);
+    setSelectedTrackId(id);
   };
 
   const updateTrackVolume = (id, volume) => {
@@ -171,6 +177,7 @@ useEffect(() => {
 
   const startRecording = async () => {
     if (!selectedTrackId) return;
+
     await Tone.start();
     const mic = new Tone.UserMedia();
     await mic.open();
@@ -179,8 +186,83 @@ useEffect(() => {
     mic.connect(rec);
     rec.start();
 
-    setIsRecording({ mic, rec, startTime: Tone.Transport.seconds });
+    if (Tone.Transport.state !== "started") {
+      Tone.Transport.start();
+    }
+
+    setIsPlaying(true);
+
+    // 🔍 NEW: AnalyserNode for waveform
+    const analyser = Tone.context.createAnalyser();
+    analyser.fftSize = 2048;
+
+    // Hacky way to access media stream node directly from Tone.UserMedia
+    mic._mediaStream.connect(analyser);
+
+    setTracks((prevTracks) =>
+      prevTracks.map((t) =>
+        t.id === selectedTrackId
+          ? {
+            ...t,
+            clips: [
+              ...t.clips,
+              {
+                url: null,
+                start: Tone.Transport.seconds,
+                duration: 0,
+                volume: 1,
+                isRecordingClip: true,
+              },
+            ],
+          }
+          : t
+      )
+    );
+
+    setIsRecording({
+      mic,
+      rec,
+      startTime: Tone.Transport.seconds,
+      analyser, // 📦 Store analyser for waveform
+    });
   };
+
+
+  const recordingRef = useRef(isRecording);
+  recordingRef.current = isRecording;
+
+  useEffect(() => {
+    let id;
+
+    if (!isRecording || !selectedTrackId) return;
+
+    const updateDuration = () => {
+      const now = Tone.Transport.seconds;
+
+      setTracks((prevTracks) =>
+        [...prevTracks.map((t) =>
+          t.id === selectedTrackId
+            ? {
+              ...t,
+              clips: t.clips.map((clip) =>
+                clip.isRecordingClip
+                  ? { ...clip, duration: now - clip.start }
+                  : clip
+              ),
+            }
+            : t
+        )]
+      );
+
+      id = requestAnimationFrame(updateDuration);
+    };
+
+    id = requestAnimationFrame(updateDuration);
+
+    return () => cancelAnimationFrame(id);
+  }, [isRecording, selectedTrackId]);
+
+
 
   const stopRecording = async () => {
     if (!isRecording || !selectedTrackId) return;
@@ -193,8 +275,9 @@ useEffect(() => {
       start: isRecording.startTime,
       duration: 0,
       volume: 1,
+      waveform: null, // temp — will be filled later
     };
-
+    
 
     const player = new Tone.Player({
       url,
@@ -205,13 +288,28 @@ useEffect(() => {
         if (!track) return;
         player.connect(track.gainNode);
         player.sync().start(clip.start);
-        updateTrackClip(selectedTrackId, clip);
+
+        setTracks((prevTracks) =>
+          prevTracks.map((t) =>
+            t.id === selectedTrackId
+              ? {
+                ...t,
+                clips: [
+                  ...t.clips.filter((c) => !c.isRecordingClip),
+                  clip,
+                ],
+              }
+              : t
+          )
+        );
+
         setIsRecording(false);
       },
     });
 
     isRecording.mic.disconnect();
   };
+
 
   const renderEffectButton = (label, isLocked, onClick) => (
     <div style={{ marginBottom: "1rem" }}>
@@ -286,42 +384,49 @@ useEffect(() => {
           onVolumeChange={updateTrackVolume}
           onToggleMute={toggleMuteTrack}
         />
+        {isRecording && isRecording.analyser && (
+          <div>
+            <h4 style={{ color: "#ccc" }}>Live Waveform</h4>
+            <LiveWaveform analyser={isRecording.analyser} />
+          </div>
+        )}
+
         <div style={{ marginTop: "2rem" }}>
-        {renderEffectButton("Compressor", featureLocks.compressor, () => setShowCompressor(true))}
-        {renderEffectButton("EQ", featureLocks.eq, () => setShowEQ(true))}
-        {renderEffectButton("Reverb", featureLocks.reverb, () => setShowReverb(true))}
+          {renderEffectButton("Compressor", featureLocks.compressor, () => setShowCompressor(true))}
+          {renderEffectButton("EQ", featureLocks.eq, () => setShowEQ(true))}
+          {renderEffectButton("Reverb", featureLocks.reverb, () => setShowReverb(true))}
 
-        {showCompressor && !featureLocks.compressor && (
-          <div style={{ border: "1px solid white", padding: "1rem", background: "#111" }}>
-            <p>This is a placeholder for a Tone.js compressor.</p>
-            <button onClick={() => setShowCompressor(false)}>Close</button>
-          </div>
-        )}
+          {showCompressor && !featureLocks.compressor && (
+            <div style={{ border: "1px solid white", padding: "1rem", background: "#111" }}>
+              <p>This is a placeholder for a Tone.js compressor.</p>
+              <button onClick={() => setShowCompressor(false)}>Close</button>
+            </div>
+          )}
 
-        {showEQ && !featureLocks.eq && (
-          <div style={{ border: "1px solid white", padding: "1rem", background: "#111" }}>
-            <p>This is a placeholder for a Tone.js EQ.</p>
-            <button onClick={() => setShowEQ(false)}>Close</button>
-          </div>
-        )}
+          {showEQ && !featureLocks.eq && (
+            <div style={{ border: "1px solid white", padding: "1rem", background: "#111" }}>
+              <p>This is a placeholder for a Tone.js EQ.</p>
+              <button onClick={() => setShowEQ(false)}>Close</button>
+            </div>
+          )}
 
-        {showReverb && !featureLocks.reverb && (
-          <div style={{ border: "1px solid white", padding: "1rem", background: "#111" }}>
-            <p>This is a placeholder for a Tone.js Reverb.</p>
-            <button onClick={() => setShowReverb(false)}>Close</button>
-          </div>
-        )}
-      </div>
+          {showReverb && !featureLocks.reverb && (
+            <div style={{ border: "1px solid white", padding: "1rem", background: "#111" }}>
+              <p>This is a placeholder for a Tone.js Reverb.</p>
+              <button onClick={() => setShowReverb(false)}>Close</button>
+            </div>
+          )}
+        </div>
       </div>
       {showIntro && (
         <PlaygroundIntroModal
           image={playgroundIntro}
-          onClose={() => setShowIntro(false)} 
+          onClose={() => setShowIntro(false)}
           onReturnHome={() => {
-          setTimeout(() => {
-          navigate("/home");
-          }, 50);
-        }}
+            setTimeout(() => {
+              navigate("/home");
+            }, 50);
+          }}
         />
       )}
     </>

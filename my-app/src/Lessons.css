@@ -1,8 +1,4 @@
 .lesson-popup {
-  position: fixed;
-  top: 20%;
-  left: 50%;
-  transform: translate(-50%);
   background: #7e6fe1;
   opacity: 95%;
   color: black;
@@ -51,4 +47,22 @@
 
 .lesson-button:hover {
   transform: scale(1.05);
+}
+
+.highlight-button {
+  animation: pulse 1s infinite;
+  outline: 2px solid #ff7f50;
+  border-radius: 8px;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 10px rgba(255, 127, 80, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 127, 80, 0.8);
+  }
+  100% {
+    box-shadow: 0 0 10px rgba(255, 127, 80, 0.5);
+  }
 }

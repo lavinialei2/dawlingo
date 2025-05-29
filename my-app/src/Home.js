@@ -9,6 +9,12 @@ import './components/ToolButton.css'
 import UnavailableLessonModal from "./components/UnavailableLessonModal";
 import unavailableLesson from "./assets/unavailable.png";
 import { ReactComponent as Playground } from './assets/Playground.svg';
+import './ProgressButton.css'; 
+import ProgressPopUp from "./components/ProgressPopUp";
+import lesson0 from "./assets/0lesson.png";
+import lesson1 from "./assets/1lesson.png";
+import lesson2 from "./assets/2lesson.png";
+
 
 
 const Home = () => {
@@ -16,6 +22,8 @@ const Home = () => {
   const [showUnavailable, setShowUnavailable] = useState(false);
   const [showPlaygroundIntro, setShowPlaygroundIntro] = useState(false);
   const [highestLessonCompleted, setHighestLessonCompleted] = useState(0);
+  const [showProgress, setShowProgress] = useState(false);
+  const lessonPopUp = [lesson0, lesson1, lesson2]
 
   useEffect(() => {
     const stored = parseInt(localStorage.getItem("highestLessonCompleted") || "0");
@@ -31,10 +39,12 @@ const Home = () => {
     // temp logic: only allow to click on first lesson !!
     lessonIndex > 0 ? setShowUnavailable(true) : navigate(`/lesson${lessonIndex + 1}`);
   };
+  
 
   return (
+    
     <div className="min-h-screen dawlingo-light-pink">
-      <header className="dawlingo-pink py-4 px-6 flex justify-between items-center">
+      <header className="dawlingo-pink py-4 px-6 flex justify-between items-center"> 
         <div className="flex items-center gap-2">
           <h1 className="pixel-font font-bold text-white">DAWlingo</h1>
         </div>
@@ -46,8 +56,12 @@ const Home = () => {
           <Playground width={80} height={80} fill="white" />
         </playground-button>
       </header>
-        
-      <main className="container max-w-3xl mx-auto py-8 px-4">
+     
+        <div class ="progress-button-bottom-right">
+           <button className ="progress-button" onClick={() => setShowProgress(true)}><b>Progress</b></button> 
+        </div>
+     
+     <main className="container max-w-3xl mx-auto py-8 px-4">
         <div className="space-y-8">
           {levels.map((level, levelIndex) => (
             <div key={level.id} className="space-y-4">
@@ -74,6 +88,7 @@ const Home = () => {
                         {tool.name} {isUnlocked ? "" : "🔒"}
                       </span>
                     </div>
+
                   );
                 })}
               </div>
@@ -88,6 +103,15 @@ const Home = () => {
             setShowUnavailable(false);
           }}
         />
+    )}
+
+    {showProgress && (
+          <ProgressPopUp
+          image={lessonPopUp[highestLessonCompleted]}
+          onClose={() => {
+              setShowProgress(false);
+          }}
+          />
       )}
     </div>
   );
