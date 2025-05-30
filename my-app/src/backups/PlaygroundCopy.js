@@ -1,13 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
-import TransportControls from "./components/TransportControls";
-import Timeline from "./components/Timeline";
+import TransportControls from "../components/TransportControls";
+import Timeline from "../components/Timeline";
 import "./App.css";
 import * as Tone from "tone";
 import { useNavigate } from 'react-router-dom';
 import './Playground.css';
-import PlaygroundIntroModal from './components/PlaygroundIntroModal';
+import PlaygroundIntroModal from '../components/PlaygroundIntroModal';
 import playgroundIntro from './assets/playgroundIntro.png'
-import LiveWaveform from "./components/LiveWaveform";
+import LiveWaveform from "../components/LiveWaveform";
+import PianoPanel from '../components/PianoPanel';
+import InstrumentSelectModal from '../components/InstrumentSelectModal';
+import { samplers } from '../components/samplers';
+
 
 
 const Playground = ({ featureLocks }) => {
@@ -22,6 +26,44 @@ const Playground = ({ featureLocks }) => {
   const [showEQ, setShowEQ] = useState(false);
   const [showReverb, setShowReverb] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
+  const [showInstrumentModal, setShowInstrumentModal] = useState(false);
+  const scheduledParts = useRef([]);
+
+  useEffect(() => {
+    if (!isPlaying || isRecording) return;
+
+    scheduledParts.current.forEach((part) => part.dispose());
+    scheduledParts.current = [];
+
+    tracks.forEach((track) => {
+      if (track.instrument !== "piano" || track.muted) return;
+
+      track.clips.forEach((clip) => {
+        if (!clip.notes || clip.notes.length === 0) return;
+
+        const part = new Tone.Part(
+          (time, { note, duration }) => {
+            samplers.piano.triggerAttackRelease(note, duration || "8n", time);
+          },
+          clip.notes.map(({ note, start, duration }) => [
+            start - clip.start, // 🧠 Relative note timing
+            { note, duration },
+          ])
+        );
+        part.start(clip.start); // ⏱ Start this part at the clip’s start
+        
+        scheduledParts.current.push(part);
+      });
+    });
+
+    return () => {
+      scheduledParts.current.forEach((part) => part.dispose());
+      scheduledParts.current = [];
+    };
+  }, [isPlaying, isRecording, tracks]);
+
+
+
 
   useEffect(() => {
     if (localStorage.getItem("showPlaygroundIntro") === "true") {
@@ -123,18 +165,24 @@ const Playground = ({ featureLocks }) => {
   };
 
   const addTrack = () => {
+    setShowInstrumentModal(true);
+  };
+
+  const confirmAddTrack = (instrumentType) => {
     const id = Date.now();
     const newTrack = {
       id,
       clips: [],
       volume: 1,
       muted: false,
-      instrument: "voice",
+      instrument: instrumentType, // 'piano' or 'microphone'
       gainNode: new Tone.Gain(1).toDestination(),
     };
     setTracks([...tracks, newTrack]);
     setSelectedTrackId(id);
+    setShowInstrumentModal(false);
   };
+
 
   const updateTrackVolume = (id, volume) => {
     setTracks((prev) =>
@@ -159,17 +207,44 @@ const Playground = ({ featureLocks }) => {
 
   const deleteSelectedTrack = () => {
     if (!selectedTrackId) return;
+
+    // Stop any synced Tone.Players in the selected track
+    const trackToDelete = tracks.find((t) => t.id === selectedTrackId);
+    if (trackToDelete) {
+      trackToDelete.clips.forEach((clip) => {
+        if (clip.player && typeof clip.player.dispose === "function") {
+          try {
+            clip.player.unsync();
+            clip.player.stop();
+            clip.player.dispose();
+          } catch (e) {
+            console.warn("Failed to dispose player", e);
+          }
+        }
+      });
+    }
+
     setTracks((prev) => prev.filter((t) => t.id !== selectedTrackId));
     setSelectedTrackId(null);
   };
 
-  const updateTrackClip = (id, clip) => {
+
+  const updateTrackClip = (id, clipOrUpdater) => {
     setTracks((prev) =>
       prev.map((t) =>
-        t.id === id ? { ...t, clips: [...(t.clips || []), clip] } : t
+        t.id === id
+          ? {
+            ...t,
+            clips: typeof clipOrUpdater === "function"
+              ? clipOrUpdater(t.clips || [])
+              : [...(t.clips || []), clipOrUpdater],
+          }
+          : t
       )
     );
   };
+
+
 
   const handleTrackSelect = (id) => {
     setSelectedTrackId(id);
@@ -178,53 +253,90 @@ const Playground = ({ featureLocks }) => {
   const startRecording = async () => {
     if (!selectedTrackId) return;
 
-    await Tone.start();
-    const mic = new Tone.UserMedia();
-    await mic.open();
+    const track = tracks.find((t) => t.id === selectedTrackId);
+    if (!track) return;
 
-    const rec = new Tone.Recorder();
-    mic.connect(rec);
-    rec.start();
+    const startTime = Tone.Transport.seconds;
 
-    if (Tone.Transport.state !== "started") {
-      Tone.Transport.start();
+    if (track.instrument === "microphone") {
+      await Tone.start();
+      const mic = new Tone.UserMedia();
+      await mic.open();
+
+      const rec = new Tone.Recorder();
+      mic.connect(rec);
+      rec.start();
+
+      if (Tone.Transport.state !== "started") {
+        Tone.Transport.start();
+      }
+
+      setIsPlaying(true);
+
+      const analyser = Tone.context.createAnalyser();
+      analyser.fftSize = 2048;
+      mic._mediaStream.connect(analyser);
+
+      setTracks((prevTracks) =>
+        prevTracks.map((t) =>
+          t.id === selectedTrackId
+            ? {
+              ...t,
+              clips: [
+                ...t.clips,
+                {
+                  url: null,
+                  start: startTime,
+                  duration: 0,
+                  volume: 1,
+                  isRecordingClip: true,
+                },
+              ],
+            }
+            : t
+        )
+      );
+
+      setIsRecording({
+        mic,
+        rec,
+        startTime,
+        analyser,
+      });
     }
 
-    setIsPlaying(true);
+    else if (track.instrument === "piano") {
+      if (Tone.Transport.state !== "started") {
+        Tone.Transport.start();
+      }
 
-    // 🔍 NEW: AnalyserNode for waveform
-    const analyser = Tone.context.createAnalyser();
-    analyser.fftSize = 2048;
+      setIsPlaying(true);
 
-    // Hacky way to access media stream node directly from Tone.UserMedia
-    mic._mediaStream.connect(analyser);
+      setTracks((prevTracks) =>
+        prevTracks.map((t) =>
+          t.id === selectedTrackId
+            ? {
+              ...t,
+              clips: [
+                ...t.clips,
+                {
+                  start: startTime,
+                  duration: 0,
+                  volume: 1,
+                  isRecordingClip: true,
+                  isVirtual: true,
+                  notes: [], // will be populated by PianoPanel
+                },
+              ],
+            }
+            : t
+        )
+      );
 
-    setTracks((prevTracks) =>
-      prevTracks.map((t) =>
-        t.id === selectedTrackId
-          ? {
-            ...t,
-            clips: [
-              ...t.clips,
-              {
-                url: null,
-                start: Tone.Transport.seconds,
-                duration: 0,
-                volume: 1,
-                isRecordingClip: true,
-              },
-            ],
-          }
-          : t
-      )
-    );
-
-    setIsRecording({
-      mic,
-      rec,
-      startTime: Tone.Transport.seconds,
-      analyser, // 📦 Store analyser for waveform
-    });
+      setIsRecording({
+        startTime,
+      });
+    }
   };
 
 
@@ -266,49 +378,89 @@ const Playground = ({ featureLocks }) => {
 
   const stopRecording = async () => {
     if (!isRecording || !selectedTrackId) return;
-    const recording = await isRecording.rec.stop();
-    const blob = new Blob([recording], { type: "audio/wav" });
-    const url = URL.createObjectURL(blob);
 
-    const clip = {
-      url,
-      start: isRecording.startTime,
-      duration: 0,
-      volume: 1,
-      waveform: null, // temp — will be filled later
-    };
-    
+    const track = tracks.find((t) => t.id === selectedTrackId);
+    if (!track) return;
 
-    const player = new Tone.Player({
-      url,
-      autostart: false,
-      onload: () => {
-        clip.duration = player.buffer.duration;
-        const track = tracks.find((t) => t.id === selectedTrackId);
-        if (!track) return;
-        player.connect(track.gainNode);
-        player.sync().start(clip.start);
+    const endTime = Tone.Transport.seconds;
+    const startTime = isRecording.startTime;
 
-        setTracks((prevTracks) =>
-          prevTracks.map((t) =>
-            t.id === selectedTrackId
-              ? {
-                ...t,
-                clips: [
-                  ...t.clips.filter((c) => !c.isRecordingClip),
-                  clip,
-                ],
-              }
-              : t
-          )
-        );
+    if (track.instrument === "microphone") {
+      const recording = await isRecording.rec.stop();
+      const blob = new Blob([recording], { type: "audio/wav" });
+      const url = URL.createObjectURL(blob);
 
-        setIsRecording(false);
-      },
-    });
+      const player = new Tone.Player({
+        url,
+        autostart: false,
+        onload: () => {
+          const clip = {
+            url,
+            start: startTime,
+            duration: player.buffer.duration,
+            volume: 1,
+            waveform: null,
+            player,
+          };
 
-    isRecording.mic.disconnect();
+          player.connect(track.gainNode);
+          player.sync().start(clip.start);
+
+          setTracks((prevTracks) =>
+            prevTracks.map((t) =>
+              t.id === selectedTrackId
+                ? {
+                  ...t,
+                  clips: [
+                    ...t.clips.filter((c) => !c.isRecordingClip),
+                    clip,
+                  ],
+                }
+                : t
+            )
+          );
+
+          setIsRecording(false);
+        },
+      });
+
+      isRecording.mic.disconnect();
+    }
+    else if (track.instrument === "piano") {
+      const recordingClip = track.clips.find(
+        (clip) => clip.isRecordingClip && clip.isVirtual
+      );
+
+      if (!recordingClip) {
+        console.warn("No in-progress piano clip found.");
+        return;
+      }
+
+      const finalizedClip = {
+        ...recordingClip,
+        isRecordingClip: false,
+        duration: endTime - recordingClip.start,
+      };
+
+      setTracks((prevTracks) =>
+        prevTracks.map((t) =>
+          t.id === selectedTrackId
+            ? {
+              ...t,
+              clips: [
+                ...t.clips.filter((clip) => clip !== recordingClip),
+                finalizedClip,
+              ],
+            }
+            : t
+        )
+      );
+
+      setIsRecording(false);
+    }
+
   };
+
 
 
   const renderEffectButton = (label, isLocked, onClick) => (
@@ -384,6 +536,38 @@ const Playground = ({ featureLocks }) => {
           onVolumeChange={updateTrackVolume}
           onToggleMute={toggleMuteTrack}
         />
+
+        <PianoPanel
+          disabled={featureLocks.piano}
+          isRecording={isRecording}
+          selectedTrackId={selectedTrackId}
+          updateTrackClip={updateTrackClip}
+          onNotePlayed={({ note, time }) => {
+            if (isRecording && selectedTrackId) {
+              const now = Tone.Transport.seconds;
+              setTracks((prev) =>
+                prev.map((t) =>
+                  t.id === selectedTrackId && t.instrument === "piano"
+                    ? {
+                      ...t,
+                      clips: t.clips.map((clip) =>
+                        clip.isRecordingClip
+                          ? {
+                            ...clip,
+                            notes: [...(clip.notes || []), { note, time: now }],
+                          }
+                          : clip
+                      ),
+                    }
+                    : t
+                )
+              );
+            }
+          }}
+
+        />
+
+
         {isRecording && isRecording.analyser && (
           <div>
             <h4 style={{ color: "#ccc" }}>Live Waveform</h4>
@@ -416,8 +600,16 @@ const Playground = ({ featureLocks }) => {
               <button onClick={() => setShowReverb(false)}>Close</button>
             </div>
           )}
+
         </div>
       </div>
+      {showInstrumentModal && (
+        <InstrumentSelectModal
+          onSelect={confirmAddTrack}
+          onClose={() => setShowInstrumentModal(false)}
+        />
+      )}
+
       {showIntro && (
         <PlaygroundIntroModal
           image={playgroundIntro}

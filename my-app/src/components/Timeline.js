@@ -1,9 +1,26 @@
 import React, { useRef, useState, useEffect } from "react";
 import './Timeline.css'
+import { Mic, Piano } from "lucide-react";
+
+
+
+
 const CONTROL_WIDTH = 160;
 const BEAT_WIDTH = 80;
 const TRACK_HEIGHT = 80;
 const GRID_HEIGHT = 24;
+
+const NOTE_ORDER = [
+  "C6", "B5", "A#5", "A5", "G#5", "G5", "F#5", "F5", "E5", "D#5", "D5", "C#5", "C5",
+  "B4", "A#4", "A4", "G#4", "G4", "F#4", "F4", "E4", "D#4", "D4", "C#4", "C4",
+  "B3", "A#3", "A3", "G#3", "G3", "F#3", "F3", "E3", "D#3", "D3", "C#3", "C3"
+];
+
+const getNoteRowIndex = (note) => NOTE_ORDER.indexOf(note);
+const NOTE_HEIGHT = 2;
+
+
+
 export default function Timeline({
   tracks,
   numBeats,
@@ -155,23 +172,45 @@ export default function Timeline({
               width: `${CONTROL_WIDTH}px`,
               padding: "4px",
               display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              gap: "4px",
-              fontSize: "10px",
+              flexDirection: "row", // ⬅️ now row instead of column
+              alignItems: "center",
               color: "#ccc",
               borderRight: "1px solid #555",
+              height: "100%", // make sure it fills the track height
             }}
           >
-            <div>
-              {/* Commented out for now because styling needs to be adjusted */}
-              {/* <strong> {track.instrument || "Instrument"}</strong> */}
+            {/* Icon Column */}
+            <div
+              style={{
+                width: "40px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                height: "100%",
+              }}
+            >
+              {track.instrument === "microphone" ? (
+                <Mic size={24} style={{ color: "#d66" }} />
+              ) : (
+                <Piano size={24} style={{ color: "#6ad" }} />
+              )}
             </div>
-            <label>
-              {/* Volume */}
+
+            {/* Controls Column */}
+            <div
+              style={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                gap: "4px",
+              }}
+            >
               <input
                 type="range"
-                className={(lesson?.[stepIndex]?.target === "volume") ? "highlight-button" : ""}
+                className={
+                  lesson?.[stepIndex]?.target === "volume" ? "highlight-button" : ""
+                }
                 ref={volumeRef}
                 min={0}
                 max={1}
@@ -184,21 +223,23 @@ export default function Timeline({
                   }
                 }}
               />
-            </label>
-            <button
-              className={`mute-button ${(lesson?.[stepIndex]?.target === "mute") ? "highlight-button" : ""}`}
-              ref={muteRef}
-              onClick={() => {
-              onToggleMute(track.id);
-              if (lesson?.[stepIndex]?.target === "volume") {
-                setHasInteracted(true);
-              }              
-            }}
-              style={{ fontSize: "10px" }}
-            >
-              {track.muted ? "Unmute" : "Mute"}
-            </button>
+              <button
+                className={`mute-button ${lesson?.[stepIndex]?.target === "mute" ? "highlight-button" : ""
+                  }`}
+                ref={muteRef}
+                onClick={() => {
+                  onToggleMute(track.id);
+                  if (lesson?.[stepIndex]?.target === "mute") {
+                    setHasInteracted(true);
+                  }
+                }}
+                style={{ fontSize: "10px" }}
+              >
+                {track.muted ? "Unmute" : "Mute"}
+              </button>
+            </div>
           </div>
+
 
           {/* Right Clip Area */}
           <div
@@ -227,7 +268,7 @@ export default function Timeline({
             }}
           >
             {track.clips
-              .filter((clip) => clip.url || clip.isRecordingClip) // allow recording clips with no URL
+              .filter((clip) => clip.url || clip.isVirtual || clip.isRecordingClip)
               .map((clip, clipIndex) => {
                 const clipStartPercent = (clip.start / numBeats) * 100;
                 const clipWidthPercent = (clip.duration / numBeats) * 100;
@@ -261,7 +302,31 @@ export default function Timeline({
                         ? "Recording..."
                         : `Start: ${clip.start.toFixed(2)}s`
                     }
-                  />
+                  >
+                    {clip.notes?.map((note, idx) => {
+                      const noteIndex = getNoteRowIndex(note.note);
+                      if (noteIndex === -1) return null;
+
+                      const top = noteIndex * NOTE_HEIGHT;
+                      const left = ((note.start - clip.start) / clip.duration) * 100;
+                      const width = (note.duration / clip.duration) * 100;
+
+                      return (
+                        <div
+                          key={idx}
+                          style={{
+                            position: "absolute",
+                            top: `${top}px`,
+                            left: `${left}%`,
+                            width: `${width}%`,
+                            height: `${NOTE_HEIGHT}px`,
+                            backgroundColor: "#a6d4fa",
+                          }}
+                        />
+                      );
+                    })}
+
+                  </div>
                 );
               })}
 

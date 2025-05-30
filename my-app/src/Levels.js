@@ -1,4 +1,4 @@
-import { Volume2, Music, Headphones, Sliders } from 'lucide-react';
+import { Piano, Music, Headphones } from 'lucide-react';
 
 const levels = [
   {
@@ -16,6 +16,25 @@ const levels = [
   },
   {
     id: 'level2',
+    title: 'Instruments',
+    description: 'Choose and use virtual instruments',
+    lessons: [
+      {
+        id: 'piano',
+        name: 'Piano',
+        color: 'bg-green-500',
+        icon: <Piano />
+      },
+      // {
+      //   id: 'arp',
+      //   name: 'Arpeggiator',
+      //   color: 'bg-green-500',
+      //   icon: <Piano />
+      // }
+    ]
+  },
+  {
+    id: 'level3',
     title: 'Mixing Tools',
     description: 'Learn about audio effects',
     lessons: [

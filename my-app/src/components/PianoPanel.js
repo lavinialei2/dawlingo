@@ -1,5 +1,6 @@
 import * as Tone from "tone";
 import { useEffect, useState, useRef, useCallback } from "react";
+import { samplers } from "./samplers";
 
 // Static key mapping (safe to define outside the component)
 const keyMap = {
@@ -21,7 +22,7 @@ const PianoPanel = ({
   disabled,
   isRecording,
   selectedTrackId,
-  updateTrackClip
+  updateTrackClip,
 }) => {
   const whiteNotes = [
     "C3", "D3", "E3", "F3", "G3", "A3", "B3",
@@ -44,66 +45,71 @@ const PianoPanel = ({
   const blackKeyOffset = keyWidth / 2;
 
   const [pressedNotes, setPressedNotes] = useState(new Set());
-  const samplerRef = useRef(null);
-
-  useEffect(() => {
-    samplerRef.current = new Tone.Sampler({
-      urls: {
-        C4: "C4.mp3",
-        "D#4": "Ds4.mp3",
-        "F#4": "Fs4.mp3",
-        A4: "A4.mp3",
-      },
-      baseUrl: "https://tonejs.github.io/audio/salamander/",
-      onload: () => console.log("Piano sampler loaded!"),
-    }).toDestination();
-
-    return () => samplerRef.current.dispose();
-  }, []);
 
   const handleNoteDown = useCallback(async (note) => {
+    if (disabled || pressedNotes.has(note)) return;
+  
     await Tone.start();
-    if (!samplerRef.current) return;
-    samplerRef.current.triggerAttack(note);
-
-    if (isRecording && selectedTrackId) {
-      const time = Tone.Transport.seconds;
-      const clip = {
-        url: null,
-        note,
-        start: time,
-        duration: 0,
-        volume: 1,
-        isVirtual: true,
-        isHeld: true,
-      };
-      updateTrackClip(selectedTrackId, clip);
-    }
-
+    const now = Tone.immediate();
+    const transportNow = Tone.Transport.seconds;
+  
+    samplers.piano.triggerAttack(note, now);
     setPressedNotes(prev => new Set(prev).add(note));
-  }, [isRecording, selectedTrackId, updateTrackClip]);
-
-  const handleNoteUp = useCallback((note) => {
-    if (!samplerRef.current) return;
-    samplerRef.current.triggerRelease(note);
-
+  
     if (isRecording && selectedTrackId) {
-      const endTime = Tone.Transport.seconds;
-      updateTrackClip(selectedTrackId, prevClips =>
-        prevClips.map(clip =>
-          clip.note === note && clip.isHeld && clip.duration === 0
-            ? { ...clip, duration: endTime - clip.start, isHeld: false }
+      updateTrackClip(selectedTrackId, (clips) =>
+        clips.map((clip) =>
+          clip.isRecordingClip && clip.isVirtual
+            ? {
+                ...clip,
+                notes: [
+                  ...(clip.notes || []),
+                  { note, start: transportNow, isHeld: true }, // <–– Save start only
+                ],
+              }
             : clip
         )
       );
     }
+  }, [disabled, pressedNotes, isRecording, selectedTrackId, updateTrackClip]);
+  
 
+  const handleNoteUp = useCallback((note) => {
+    if (!pressedNotes.has(note)) return;
+  
+    const now = Tone.immediate();
+    const transportNow = Tone.Transport.seconds;
+  
+    samplers.piano.triggerRelease(note, now);
     setPressedNotes(prev => {
       const next = new Set(prev);
       next.delete(note);
       return next;
     });
-  }, [isRecording, selectedTrackId, updateTrackClip]);
+  
+    if (isRecording && selectedTrackId) {
+      updateTrackClip(selectedTrackId, (clips) =>
+        clips.map((clip) =>
+          clip.isRecordingClip && clip.isVirtual
+            ? {
+                ...clip,
+                notes: clip.notes.map((n) =>
+                  n.note === note && n.isHeld
+                    ? {
+                        ...n,
+                        duration: transportNow - n.start,
+                        isHeld: false,
+                      }
+                    : n
+                ),
+              }
+            : clip
+        )
+      );
+    }
+  }, [pressedNotes, isRecording, selectedTrackId, updateTrackClip]);
+  
+
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -141,7 +147,7 @@ const PianoPanel = ({
   return (
     <div style={{ marginTop: "1rem" }}>
       <h4 style={{ marginBottom: "0.5rem" }}>
-        🎹 Piano {disabled ? "(Locked)" : ""}
+        Piano {disabled ? "(Locked)" : ""}
       </h4>
       <div style={{ position: "relative", height: whiteKeyHeight, width: whiteNotes.length * keyWidth }}>
         {whiteNotes.map((note, i) => (
