@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef } from "react";
-import TransportControls from "./components/TransportControls";
-import Timeline from "./components/Timeline";
+import TransportControls from "../components/TransportControls";
+import Timeline from "../components/Timeline";
 import "./App.css";
 import * as Tone from "tone";
-import TrackList from "./components/TrackList";
-import CongratsModal from "./components/CongratsModal";
+import TrackList from "../components/TrackList";
+import CongratsModal from "../components/CongratsModal";
 import congratsImage from "./assets/lvl1complete.png";
 import { useNavigate } from "react-router-dom";
 import './Playground.css';
 import './Lessons.css'
-import lessons from './Lessons';
+import lessons from '../Lessons';
 
 export default function Lesson1({ onLessonComplete }) {
   const navigate = useNavigate();

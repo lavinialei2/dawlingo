@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import TransportControls from "./components/TransportControls";
-import Timeline from "./components/Timeline";
+import TransportControls from "../components/TransportControls";
+import Timeline from "../components/Timeline";
 import "./App.css";
 import * as Tone from "tone";
 import { useNavigate } from 'react-router-dom';
 import './Playground.css';
-import PlaygroundIntroModal from './components/PlaygroundIntroModal';
+import PlaygroundIntroModal from '../components/PlaygroundIntroModal';
 import playgroundIntro from './assets/playgroundIntro.png'
-import LiveWaveform from "./components/LiveWaveform";
-import PianoPanel from './components/PianoPanel';
-import InstrumentSelectModal from './components/InstrumentSelectModal';
-import { samplers } from './components/samplers';
+import LiveWaveform from "../components/LiveWaveform";
+import PianoPanel from '../components/PianoPanel';
+import InstrumentSelectModal from '../components/InstrumentSelectModal';
+import { samplers } from '../components/samplers';
 
 
 

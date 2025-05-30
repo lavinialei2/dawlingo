@@ -10,6 +10,7 @@ import LiveWaveform from "./components/LiveWaveform";
 import PianoPanel from "./components/PianoPanel";
 import InstrumentSelectModal from "./components/InstrumentSelectModal";
 import { DAWEngine } from "./components/DAWEngine";
+import Arpeggiator from "./components/ArpeggiatorPanel";
 
 const Playground = ({ featureLocks }) => {
   const navigate = useNavigate();
@@ -91,7 +92,6 @@ const Playground = ({ featureLocks }) => {
 
           <button onClick={() => onScrubPlayhead(0)}>Reset Playhead</button>
 
-          <label style={{ display: "block", marginTop: "10px" }}>Playhead:</label>
           <input
             type="range"
             min={0}
@@ -123,6 +123,7 @@ const Playground = ({ featureLocks }) => {
           selectedTrackId={selectedTrackId}
           updateTrackClip={updateTrackClip}
         />
+        <Arpeggiator/>
 
         {isRecording?.analyser && (
           <div>

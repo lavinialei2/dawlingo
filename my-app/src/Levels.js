@@ -11,17 +11,30 @@ const levels = [
         name: 'Intro to the DAW',
         color: 'bg-blue-500',
         icon: <Music />
+      }
+    ]
+  },
+  {
+    id: 'level2',
+    title: 'Instruments',
+    description: 'Choose and use virtual instruments',
+    lessons: [
+      {
+        id: 'piano',
+        name: 'Piano',
+        color: 'bg-green-500',
+        icon: <Piano />
       },
       {
-        id: 'instruments',
-        name: 'Instruments',
+        id: 'arp',
+        name: 'Arpeggiator',
         color: 'bg-green-500',
         icon: <Piano />
       }
     ]
   },
   {
-    id: 'level2',
+    id: 'level3',
     title: 'Mixing Tools',
     description: 'Learn about audio effects',
     lessons: [
