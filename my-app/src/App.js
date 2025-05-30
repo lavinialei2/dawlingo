@@ -1,37 +1,18 @@
-import React, { useState } from "react";
+import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Home from './Home';
 import Playground from "./Playground";
 import Lesson1 from "./Lesson1";
 import Lesson2 from "./Lesson2";
-
-function getInitialFeatureLocks() {
-  try {
-    const stored = localStorage.getItem("featureLocks");
-    if (stored) {
-      return JSON.parse(stored);
-    }
-  } catch (error) {
-    console.error("Error reading featureLocks from localStorage:", error);
-  }
-
-  return {
-    compressor: true,
-    reverb: true,
-    eq: true,
-    piano: true,
-  };
-}
+import { getUnlockedFeatures } from './featureUnlocks';
 
 function App() {
-  const [featureLocks, setFeatureLocks] = useState(getInitialFeatureLocks);
+  const highestLessonCompleted = parseInt(localStorage.getItem("highestLessonCompleted") || "0");
+  const featureLocks = getUnlockedFeatures(highestLessonCompleted);
 
   const unlockFeature = (featureKey) => {
-    setFeatureLocks((prev) => {
-      const updated = { ...prev, [featureKey]: false };
-      localStorage.setItem("featureLocks", JSON.stringify(updated));
-      return updated;
-    });
+    const updated = { ...featureLocks, [featureKey]: false };
+    localStorage.setItem("featureLocks", JSON.stringify(updated));
   };
 
   return (

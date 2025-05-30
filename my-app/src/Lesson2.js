@@ -19,11 +19,11 @@ export default function Lesson2({ onLessonComplete }) {
   const lesson = lessons[1].steps;
   const [stepIndex, setStepIndex] = useState(0);
   const isLastStep = stepIndex === lesson.length - 1;
-  const [lessonComplete, setLessonComplete] = useState(false);
   const [showCongrats, setShowCongrats] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
   const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0 });
   const [showInstrumentModal, setShowInstrumentModal] = useState(false);
+  const [lessonComplete, setLessonComplete] = useState(false);
 
   const {
     tracks,
@@ -58,8 +58,8 @@ export default function Lesson2({ onLessonComplete }) {
   };
 
   useEffect(() => {
-    const completed = localStorage.getItem("lesson2Complete") === "true";
-    setLessonComplete(completed);
+    const highest = parseInt(localStorage.getItem("highestLessonCompleted") || "0");
+    setLessonComplete(highest >= 2);
   }, []);
 
   useEffect(() => {
@@ -75,14 +75,14 @@ export default function Lesson2({ onLessonComplete }) {
         left: rect.left + window.scrollX + rect.width / 2,
       });
     }
-  }, [stepIndex]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stepIndex, lesson]);
 
   const handleLessonComplete = () => {
-    const highest = parseInt(localStorage.getItem("highestLessonCompleted") || "1");
+    const highest = parseInt(localStorage.getItem("highestLessonCompleted") || "0");
     if (highest < 2) {
       localStorage.setItem("highestLessonCompleted", "2");
     }
-    localStorage.setItem("lesson2Complete", "true");
     setLessonComplete(true);
     if (onLessonComplete) onLessonComplete("lesson2");
     setShowCongrats(true);
@@ -111,14 +111,13 @@ export default function Lesson2({ onLessonComplete }) {
           </button>
         </div>
       )}
+
+      <div className="playground-header">
+        <h2 className="pixel-font playground-header-title">Lesson 2</h2>
+        <button className="home-button" onClick={() => navigate("/home")}>Home</button>
+      </div>
+
       <div className="playground-container">
-
-
-        <div className="playground-header">
-          <h2 className="pixel-font playground-header-title">Lesson 2</h2>
-          <button className="home-button" onClick={() => navigate("/home")}>Home</button>
-        </div>
-
         <div className="playground-controls">
           <TransportControls
             playButtonRef={refs.playButton}
@@ -142,7 +141,11 @@ export default function Lesson2({ onLessonComplete }) {
             {isRecording ? "Stop Recording" : "Record"}
           </button>
 
-          <button ref={refs.delete} onClick={() => deleteTrack(selectedTrackId)} disabled={!selectedTrackId}>
+          <button
+            ref={refs.delete}
+            onClick={() => deleteTrack(selectedTrackId)}
+            disabled={!selectedTrackId}
+          >
             Delete Track
           </button>
 

@@ -41,9 +41,9 @@ const Playground = ({ featureLocks }) => {
   } = DAWEngine();
 
   useEffect(() => {
-    if (localStorage.getItem("showPlaygroundIntro") === "true") {
+    if (!localStorage.getItem("hasSeenPlaygroundIntro")) {
       setShowIntro(true);
-      localStorage.removeItem("showPlaygroundIntro");
+      localStorage.setItem("hasSeenPlaygroundIntro", "true");
     }
   }, []);
 

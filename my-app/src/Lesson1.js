@@ -15,10 +15,11 @@ export default function Lesson1({ onLessonComplete }) {
   const lesson = lessons[0].steps;
   const [stepIndex, setStepIndex] = useState(0);
   const isLastStep = stepIndex === lesson.length - 1;
-  const [lessonComplete, setLessonComplete] = useState(false);
   const [showCongrats, setShowCongrats] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
   const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0 });
+
+  const [lessonComplete, setLessonComplete] = useState(false);
 
   const {
     tracks,
@@ -50,31 +51,27 @@ export default function Lesson1({ onLessonComplete }) {
   const muteRef = useRef(null);
 
   useEffect(() => {
-    const completed = localStorage.getItem("lesson1Complete") === "true";
-    setLessonComplete(completed);
+    const highest = parseInt(localStorage.getItem("highestLessonCompleted") || "0");
+    setLessonComplete(highest >= 1);
   }, []);
 
   useEffect(() => {
-    if (stepIndex === 0 || stepIndex === 1) {
-      setHasInteracted(true);
-    } else {
-      setHasInteracted(false);
-    }
+    setHasInteracted(stepIndex <= 1);
   }, [stepIndex]);
 
   useEffect(() => {
-    let targetRef;
-    switch (lesson[stepIndex].target) {
-      case "addTrack": targetRef = addTrackButtonRef; break;
-      case "playButton": targetRef = playButtonRef; break;
-      case "recordButton": targetRef = recordRef; break;
-      case "resetPlayhead": targetRef = resetPlayheadRef; break;
-      case "playheadSlider": targetRef = playheadRef; break;
-      case "volume": targetRef = volumeRef; break;
-      case "mute": targetRef = muteRef; break;
-      case "delete": targetRef = deleteTrackButtonRef; break;
-      default: break;
-    }
+    const targetKey = lesson[stepIndex].target;
+    const refs = {
+      addTrack: addTrackButtonRef,
+      playButton: playButtonRef,
+      recordButton: recordRef,
+      resetPlayhead: resetPlayheadRef,
+      playheadSlider: playheadRef,
+      volume: volumeRef,
+      mute: muteRef,
+      delete: deleteTrackButtonRef,
+    };
+    const targetRef = refs[targetKey];
 
     if (targetRef?.current) {
       const rect = targetRef.current.getBoundingClientRect();
@@ -95,7 +92,6 @@ export default function Lesson1({ onLessonComplete }) {
       localStorage.setItem("highestLessonCompleted", "1");
     }
     setLessonComplete(true);
-    localStorage.setItem("lesson1Complete", "true");
     if (onLessonComplete) onLessonComplete("lesson1");
     setShowCongrats(true);
   };

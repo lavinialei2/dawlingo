@@ -148,7 +148,7 @@ const PianoPanel = ({
   return (
     <div style={{ marginTop: "1rem" }}>
       <h4 style={{ marginBottom: "0.5rem" }}>
-        🎹 Piano {disabled ? "(Locked)" : ""}
+        Piano {disabled ? "(Locked)" : ""}
       </h4>
       <div style={{ position: "relative", height: whiteKeyHeight, width: whiteNotes.length * keyWidth }}>
         {whiteNotes.map((note, i) => (

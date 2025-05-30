@@ -1,4 +1,4 @@
-import { Volume2, Music, Headphones, Sliders } from 'lucide-react';
+import { Piano, Music, Headphones } from 'lucide-react';
 
 const levels = [
   {
@@ -11,6 +11,12 @@ const levels = [
         name: 'Intro to the DAW',
         color: 'bg-blue-500',
         icon: <Music />
+      },
+      {
+        id: 'instruments',
+        name: 'Instruments',
+        color: 'bg-green-500',
+        icon: <Piano />
       }
     ]
   },
