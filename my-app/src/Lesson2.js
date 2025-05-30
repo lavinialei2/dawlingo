@@ -46,16 +46,15 @@ export default function Lesson2({ onLessonComplete }) {
     setClipVolume,
   } = DAWEngine();
 
-  const refs = {
-    addTrack: useRef(null),
-    playButton: useRef(null),
-    recordButton: useRef(null),
-    delete: useRef(null),
-    resetPlayhead: useRef(null),
-    playheadSlider: useRef(null),
-    volume: useRef(null),
-    mute: useRef(null),
-  };
+  const addTrackButtonRef = useRef(null);
+  const playButtonRef = useRef(null);
+  const recordRef = useRef(null);
+  const deleteTrackButtonRef = useRef(null);
+  const resetPlayheadRef = useRef(null);
+  const playheadRef = useRef(null);
+  const volumeRef = useRef(null);
+  const muteRef = useRef(null);
+  const pianoRef = useRef(null);
 
   useEffect(() => {
     const highest = parseInt(localStorage.getItem("highestLessonCompleted") || "0");
@@ -67,16 +66,32 @@ export default function Lesson2({ onLessonComplete }) {
   }, [stepIndex]);
 
   useEffect(() => {
-    const key = lesson[stepIndex].target;
-    if (key && refs[key]?.current) {
-      const rect = refs[key].current.getBoundingClientRect();
+    const targetKey = lesson[stepIndex].target;
+    const refs = {
+      addTrack: addTrackButtonRef,
+      playButton: playButtonRef,
+      recordButton: recordRef,
+      resetPlayhead: resetPlayheadRef,
+      playheadSlider: playheadRef,
+      volume: volumeRef,
+      mute: muteRef,
+      delete: deleteTrackButtonRef,
+      piano: pianoRef,
+    };
+    const targetRef = refs[targetKey];
+
+    if (targetRef?.current) {
+      const rect = targetRef.current.getBoundingClientRect();
+      const isArrowLeft = [6, 7, 9].includes(stepIndex);
+      const extraOffsetX = isArrowLeft ? 70 : 0;
       setPopupPosition({
-        top: rect.top + window.scrollY + 50,
-        left: rect.left + window.scrollX + rect.width / 2,
+        top: rect.bottom + window.scrollY + 10,
+        left: rect.left + window.scrollX + rect.width / 2 + extraOffsetX,
       });
+    } else {
+      setPopupPosition({ top: window.innerHeight * 0.64, left: window.innerWidth / 2 });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stepIndex, lesson]);
+  }, [stepIndex]);
 
   const handleLessonComplete = () => {
     const highest = parseInt(localStorage.getItem("highestLessonCompleted") || "0");
@@ -92,12 +107,12 @@ export default function Lesson2({ onLessonComplete }) {
     <>
       {stepIndex < lesson.length && (
         <div
-          className={`lesson-popup ${lesson[stepIndex].hasArrow ? "with-arrow" : ""}`}
+          className={`lesson-popup ${lesson[stepIndex].hasArrow ? "with-arrow" : ""} ${(stepIndex === 6 || stepIndex === 7 || stepIndex === 9) ? "arrow-left" : "arrow-center"}`}
           style={{
-            position: stepIndex <= 1 ? "fixed" : "absolute",
-            top: stepIndex <= 1 ? "50%" : popupPosition.top,
-            left: stepIndex <= 1 ? "50%" : popupPosition.left,
-            transform: stepIndex <= 1 ? "translate(-50%, -50%)" : "translate(-50%, 0%)",
+            position: lesson[stepIndex]?.target === "none" ? "absolute" : "absolute",
+            top: lesson[stepIndex]?.target === "none" ? popupPosition.top : popupPosition.top,
+            left: popupPosition.left,
+            transform: "translate(-50%, 0%)",
           }}
         >
           <h4>{lesson[stepIndex].title}</h4>
@@ -120,7 +135,7 @@ export default function Lesson2({ onLessonComplete }) {
       <div className="playground-container">
         <div className="playground-controls">
           <TransportControls
-            playButtonRef={refs.playButton}
+            playButtonRef={playButtonRef}
             isPlaying={isPlaying}
             setIsPlaying={togglePlay}
             stepIndex={stepIndex}
@@ -128,10 +143,20 @@ export default function Lesson2({ onLessonComplete }) {
             lesson={lesson}
           />
 
-          <button ref={refs.addTrack} onClick={() => setShowInstrumentModal(true)}>Add Track</button>
+          <button
+            ref={addTrackButtonRef}
+            className={lesson[stepIndex]?.target === "addTrack" ? "highlight-button" : ""}
+            onClick={() => {
+              setShowInstrumentModal(true);
+              if (lesson[stepIndex]?.target === "addTrack") setHasInteracted(true);
+            }}
+          >
+            Add Track
+          </button>
 
           <button
-            ref={refs.recordButton}
+            ref={recordRef}
+            className={lesson[stepIndex]?.target === "recordButton" ? "highlight-button" : ""}
             onClick={() => {
               isRecording ? stopRecording() : startRecording();
               if (lesson[stepIndex]?.target === "recordButton") setHasInteracted(true);
@@ -142,22 +167,31 @@ export default function Lesson2({ onLessonComplete }) {
           </button>
 
           <button
-            ref={refs.delete}
-            onClick={() => deleteTrack(selectedTrackId)}
+            ref={deleteTrackButtonRef}
+            className={lesson[stepIndex]?.target === "delete" ? "highlight-button" : ""}
+            onClick={() => {
+              deleteTrack(selectedTrackId);
+              if (lesson[stepIndex]?.target === "delete") setHasInteracted(true);
+            }}
             disabled={!selectedTrackId}
           >
             Delete Track
           </button>
 
           <button
-            ref={refs.resetPlayhead}
-            onClick={() => onScrubPlayhead(0)}
+            ref={resetPlayheadRef}
+            className={lesson[stepIndex]?.target === "resetPlayhead" ? "highlight-button" : ""}
+            onClick={() => {
+              onScrubPlayhead(0);
+              if (lesson[stepIndex]?.target === "resetPlayhead") setHasInteracted(true);
+            }}
           >
             Reset Playhead
           </button>
 
           <input
-            ref={refs.playheadSlider}
+            ref={playheadRef}
+            className={lesson[stepIndex]?.target === "playheadSlider" ? "highlight-button" : ""}
             type="range"
             min={0}
             max={60}
@@ -172,9 +206,9 @@ export default function Lesson2({ onLessonComplete }) {
         </div>
 
         <Timeline
-          playheadRef={refs.playheadSlider}
-          volumeRef={refs.volume}
-          muteRef={refs.mute}
+          playheadRef={playheadRef}
+          volumeRef={volumeRef}
+          muteRef={muteRef}
           tracks={tracks}
           numBeats={16}
           selectedTrackId={selectedTrackId}
@@ -195,14 +229,18 @@ export default function Lesson2({ onLessonComplete }) {
           isRecording={isRecording}
           selectedTrackId={selectedTrackId}
           updateTrackClip={updateTrackClip}
+          ref={pianoRef}
+          onKeyPress={() => {
+            if (lesson[stepIndex]?.target === "piano") setHasInteracted(true);
+          }}
         />
 
-        {isRecording?.analyser && (
+        {/* {isRecording?.analyser && (
           <>
             <h4 style={{ color: "#ccc" }}>Live Waveform</h4>
             <LiveWaveform analyser={isRecording.analyser} />
           </>
-        )}
+        )} */}
       </div>
 
       {showInstrumentModal && (

@@ -123,7 +123,7 @@ const Playground = ({ featureLocks }) => {
           selectedTrackId={selectedTrackId}
           updateTrackClip={updateTrackClip}
         />
-        <Arpeggiator/>
+        <Arpeggiator disabled={featureLocks.piano}/>
 
         {isRecording?.analyser && (
           <div>

@@ -85,6 +85,48 @@ const lessons = [
         target: "none",
         hasArrow: false
       },
+      {
+        title: "Piano",
+        text: "Try out the virtual piano using your keyboard! The keys are labeled with their pitches and a corresponding QWERTY key.",
+        target: "none",
+        hasArrow: false
+      },
+      {
+        title: "Add a Track",
+        text: "Click the 'Add Track' button to create a new track. Choose the piano option.",
+        target: "addTrack",
+        hasArrow: true
+      },
+      {
+        title: "Record",
+        text: "Press record, and start playing the piano. Notice the piano roll that shows up. Stop when you're done.",
+        target: "recordButton",
+        hasArrow: true
+      },
+      {
+        title: "Playback",
+        text: "Pause the playhead, reset the playhead, and press play to listen to your piano track.",
+        target: "playButton",
+        hasArrow: false,
+      },
+      {
+        title: "Add another Track",
+        text: "Now add a microphone track!",
+        target: "addTrack",
+        hasArrow: true
+      },
+      {
+        title: "Record",
+        text: "Reset the playhead, and record yourself alongside the piano.",
+        target: "recordButton",
+        hasArrow: true
+      },
+      {
+        title: "Playback",
+        text: "Pause the playhead, reset the playhead, and press play to listen to your piano and microphone duet!",
+        target: "playButton",
+        hasArrow: true,
+      },
     ]
   },  
 ];

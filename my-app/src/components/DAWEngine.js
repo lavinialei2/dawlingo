@@ -63,11 +63,11 @@ export const DAWEngine = () => {
       prev.map((t) =>
         t.id === id
           ? {
-              ...t,
-              clips: typeof clipOrUpdater === "function"
-                ? clipOrUpdater(t.clips || [])
-                : [...(t.clips || []), clipOrUpdater],
-            }
+            ...t,
+            clips: typeof clipOrUpdater === "function"
+              ? clipOrUpdater(t.clips || [])
+              : [...(t.clips || []), clipOrUpdater],
+          }
           : t
       )
     );
@@ -99,11 +99,11 @@ export const DAWEngine = () => {
       prev.map((t) =>
         t.id === trackId
           ? {
-              ...t,
-              clips: t.clips.map((clip, i) =>
-                i === clipIndex ? { ...clip, start: Math.max(0, newStart) } : clip
-              ),
-            }
+            ...t,
+            clips: t.clips.map((clip, i) =>
+              i === clipIndex ? { ...clip, start: Math.max(0, newStart) } : clip
+            ),
+          }
           : t
       )
     );
@@ -124,11 +124,11 @@ export const DAWEngine = () => {
       prev.map((t) =>
         t.id === trackId
           ? {
-              ...t,
-              clips: t.clips.map((clip, i) =>
-                i === clipIndex ? { ...clip, volume } : clip
-              ),
-            }
+            ...t,
+            clips: t.clips.map((clip, i) =>
+              i === clipIndex ? { ...clip, volume } : clip
+            ),
+          }
           : t
       )
     );
@@ -162,18 +162,18 @@ export const DAWEngine = () => {
         prev.map((t) =>
           t.id === selectedTrackId
             ? {
-                ...t,
-                clips: [
-                  ...t.clips,
-                  {
-                    url: null,
-                    start: startTime,
-                    duration: 0,
-                    volume: 1,
-                    isRecordingClip: true,
-                  },
-                ],
-              }
+              ...t,
+              clips: [
+                ...t.clips,
+                {
+                  url: null,
+                  start: startTime,
+                  duration: 0,
+                  volume: 1,
+                  isRecordingClip: true,
+                },
+              ],
+            }
             : t
         )
       );
@@ -187,19 +187,19 @@ export const DAWEngine = () => {
         prev.map((t) =>
           t.id === selectedTrackId
             ? {
-                ...t,
-                clips: [
-                  ...t.clips,
-                  {
-                    start: startTime,
-                    duration: 0,
-                    volume: 1,
-                    isRecordingClip: true,
-                    isVirtual: true,
-                    notes: [],
-                  },
-                ],
-              }
+              ...t,
+              clips: [
+                ...t.clips,
+                {
+                  start: startTime,
+                  duration: 0,
+                  volume: 1,
+                  isRecordingClip: true,
+                  isVirtual: true,
+                  notes: [],
+                },
+              ],
+            }
             : t
         )
       );
@@ -237,12 +237,12 @@ export const DAWEngine = () => {
             prev.map((t) =>
               t.id === selectedTrackId
                 ? {
-                    ...t,
-                    clips: [
-                      ...t.clips.filter((c) => !c.isRecordingClip),
-                      clip,
-                    ],
-                  }
+                  ...t,
+                  clips: [
+                    ...t.clips.filter((c) => !c.isRecordingClip),
+                    clip,
+                  ],
+                }
                 : t
             )
           );
@@ -267,12 +267,12 @@ export const DAWEngine = () => {
         prev.map((t) =>
           t.id === selectedTrackId
             ? {
-                ...t,
-                clips: [
-                  ...t.clips.filter((c) => c !== recordingClip),
-                  finalized,
-                ],
-              }
+              ...t,
+              clips: [
+                ...t.clips.filter((c) => c !== recordingClip),
+                finalized,
+              ],
+            }
             : t
         )
       );
@@ -311,11 +311,11 @@ export const DAWEngine = () => {
         prev.map((t) =>
           t.id === selectedTrackId
             ? {
-                ...t,
-                clips: t.clips.map((clip) =>
-                  clip.isRecordingClip ? { ...clip, duration: now - clip.start } : clip
-                ),
-              }
+              ...t,
+              clips: t.clips.map((clip) =>
+                clip.isRecordingClip ? { ...clip, duration: now - clip.start } : clip
+              ),
+            }
             : t
         )
       );
@@ -325,8 +325,9 @@ export const DAWEngine = () => {
     return () => cancelAnimationFrame(id);
   }, [isRecording, selectedTrackId]);
 
+
   useEffect(() => {
-    if (!isPlaying || isRecording) return;
+    if (!isPlaying && !isRecording) return;
 
     scheduledParts.current.forEach((p) => p.dispose());
     scheduledParts.current = [];
@@ -335,7 +336,7 @@ export const DAWEngine = () => {
       if (track.instrument !== "piano" || track.muted) return;
 
       track.clips.forEach((clip) => {
-        if (!clip.notes || clip.notes.length === 0) return;
+        if (clip.isRecordingClip || !clip.notes || clip.notes.length === 0) return;
 
         const part = new Tone.Part(
           (time, { note, duration }) => {
@@ -357,6 +358,7 @@ export const DAWEngine = () => {
       scheduledParts.current = [];
     };
   }, [isPlaying, isRecording, tracks]);
+
 
   return {
     tracks,

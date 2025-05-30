@@ -25,12 +25,12 @@ const levels = [
         color: 'bg-green-500',
         icon: <Piano />
       },
-      {
-        id: 'arp',
-        name: 'Arpeggiator',
-        color: 'bg-green-500',
-        icon: <Piano />
-      }
+      // {
+      //   id: 'arp',
+      //   name: 'Arpeggiator',
+      //   color: 'bg-green-500',
+      //   icon: <Piano />
+      // }
     ]
   },
   {

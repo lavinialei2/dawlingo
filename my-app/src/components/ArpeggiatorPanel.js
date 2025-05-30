@@ -25,9 +25,9 @@ const CHORD_FORMULAS = {
 
 // --- MIDI and scale mappings ---
 const NOTE_TO_MIDI = {
-    C: 60, "C#": 61, D: 62, "D#": 63, E: 64,
-    F: 65, "F#": 66, G: 67, "G#": 68, A: 69,
-    "A#": 70, B: 71
+    C: 48, "C#": 49, D: 50, "D#": 51, E: 52,
+    F: 53, "F#": 54, G: 55, "G#": 56, A: 57,
+    "A#": 58, B: 59
 };
 
 const MAJOR_SCALE_SEMITONES = [0, 2, 4, 5, 7, 9, 11];
@@ -147,11 +147,11 @@ function getChordSequenceForKey(prog, key) {
 }
 
 // --- Main component ---
-export default function Arpeggiator() {
+export default function Arpeggiator({ disabled = false }) {
     const [selectedGenre, setSelectedGenre] = useState("Pop");
     const [selectedProgressionName, setSelectedProgressionName] = useState("I–V–vi–IV");
     const [selectedKey, setSelectedKey] = useState("C");
-    const [tempo, setTempo] = useState(120);
+    const [tempo, setTempo] = useState(144);
     const synthRef = useRef(null);
     const loopRef = useRef(null);
     const [playMode, setPlayMode] = useState("arpeggio"); // or "chord"
@@ -225,7 +225,7 @@ export default function Arpeggiator() {
         loopRef.current = new Tone.Loop((time) => {
             playChordPattern(time, chords[chordIndex]);
             chordIndex = (chordIndex + 1) % chords.length;
-        }, "chord" ? Tone.Time("1m").toSeconds() * 2 : Tone.Time("8n").toSeconds() * 12);
+        }, playMode === "chord" ? Tone.Time("8n").toSeconds() * 16 : Tone.Time("8n").toSeconds() * 12);
 
         loopRef.current.start("+0.1");
         Tone.Transport.start();
@@ -269,7 +269,7 @@ export default function Arpeggiator() {
                 borderTopLeftRadius: "10px",
                 borderTopRightRadius: "10px"
             }}>
-                Arpeggiator
+                {disabled ? "Arpeggiator (Locked)" : "Arpeggiator"}
             </div>
 
             {/* Body */}
@@ -278,6 +278,7 @@ export default function Arpeggiator() {
                 <div style={{ marginBottom: "1.5rem" }}>
                     <label style={{ fontWeight: "bold", marginRight: "10px" }}>Key:</label>
                     <select
+                        disabled={disabled}
                         value={selectedKey}
                         onChange={(e) => setSelectedKey(e.target.value)}
                         style={{
@@ -299,6 +300,7 @@ export default function Arpeggiator() {
                 <div style={{ marginBottom: "1.5rem" }}>
                     <label style={{ fontWeight: "bold", marginRight: "10px" }}>Tempo (BPM):</label>
                     <input
+                        disabled={disabled}
                         type="number"
                         min={60}
                         max={180}
@@ -325,6 +327,7 @@ export default function Arpeggiator() {
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
                         {Object.entries(PROGRESSIONS_BY_GENRE["Pop"]).map(([name]) => (
                             <button
+                                disabled={disabled}
                                 key={name}
                                 onClick={() => {
                                     setSelectedGenre("Pop");
@@ -360,6 +363,7 @@ export default function Arpeggiator() {
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
                         {Object.entries(PROGRESSIONS_BY_GENRE["Jazz"]).map(([name]) => (
                             <button
+                                disabled={disabled}
                                 key={name}
                                 onClick={() => {
                                     setSelectedGenre("Jazz");
@@ -391,6 +395,7 @@ export default function Arpeggiator() {
 
                 <div style={{ display: "flex", justifyContent: "center", gap: "1rem", margin: "1rem 0" }}>
                     <button
+                        disabled={disabled}
                         onClick={() => setPlayMode("arpeggio")}
                         style={{
                             padding: "10px 16px",
@@ -405,6 +410,7 @@ export default function Arpeggiator() {
                         Arpeggio
                     </button>
                     <button
+                        disabled={disabled}
                         onClick={() => setPlayMode("chord")}
                         style={{
                             padding: "10px 16px",
@@ -423,28 +429,34 @@ export default function Arpeggiator() {
 
                 {/* Play / Stop Buttons */}
                 <div style={{ textAlign: "center", marginTop: "20px" }}>
-                    <button onClick={startArpeggiatorLoop} style={{
-                        padding: "10px 18px",
-                        fontWeight: 600,
-                        fontSize: "14px",
-                        borderRadius: "9999px",
-                        border: "none",
-                        backgroundColor: "#7e6fe1",
-                        color: "#000",
-                        cursor: "pointer"
-                    }}>
+                    <button
+                        disabled={disabled}
+                        onClick={startArpeggiatorLoop}
+                        style={{
+                            padding: "10px 18px",
+                            fontWeight: 600,
+                            fontSize: "14px",
+                            borderRadius: "9999px",
+                            border: "none",
+                            backgroundColor: "#7e6fe1",
+                            color: "#000",
+                            cursor: "pointer"
+                        }}>
                         Play
                     </button>
-                    <button onClick={stopArpeggiatorLoop} style={{
-                        padding: "10px 18px",
-                        fontWeight: 600,
-                        fontSize: "14px",
-                        borderRadius: "9999px",
-                        border: "none",
-                        backgroundColor: "#777",
-                        color: "#fff",
-                        cursor: "pointer"
-                    }}>
+                    <button
+                        disabled={disabled}
+                        onClick={stopArpeggiatorLoop}
+                        style={{
+                            padding: "10px 18px",
+                            fontWeight: 600,
+                            fontSize: "14px",
+                            borderRadius: "9999px",
+                            border: "none",
+                            backgroundColor: "#777",
+                            color: "#fff",
+                            cursor: "pointer"
+                        }}>
                         Stop
                     </button>
                 </div>
