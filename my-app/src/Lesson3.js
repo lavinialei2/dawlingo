@@ -9,99 +9,114 @@ import "./Playground.css";
 import "./Lessons.css";
 
 export default function Lesson3({ onLessonComplete }) {
-  const navigate = useNavigate();
-  const lesson = lessons[2].steps;
-  const [stepIndex, setStepIndex] = useState(0);
-  const isLastStep = stepIndex === lesson.length - 1;
-  const [showCongrats, setShowCongrats] = useState(false);
-  const [lessonComplete, setLessonComplete] = useState(false);
-  const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0 });
+    const navigate = useNavigate();
+    const lesson = lessons[2].steps;
+    const [stepIndex, setStepIndex] = useState(0);
+    const isLastStep = stepIndex === lesson.length - 1;
+    const [showCongrats, setShowCongrats] = useState(false);
+    const [lessonComplete, setLessonComplete] = useState(false);
+    const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0 });
 
-  const keySelectRef = useRef(null);
-  const progressionButtonsRef = useRef(null);
-  const playbackModeRef = useRef(null);
-  const startStopRef = useRef(null);
+    const keySelectRef = useRef(null);
+    const progressionButtonsRef = useRef(null);
+    const playbackModeRef = useRef(null);
+    const startStopRef = useRef(null);
 
-  useEffect(() => {
-    const highest = parseInt(localStorage.getItem("highestLessonCompleted") || "0");
-    setLessonComplete(highest >= 3);
-  }, []);
+    useEffect(() => {
+        const highest = parseInt(localStorage.getItem("highestLessonCompleted") || "0");
+        setLessonComplete(highest >= 3);
+    }, []);
 
-  useEffect(() => {
-    const refs = {
-      keySelect: keySelectRef,
-      progressionButtons: progressionButtonsRef,
-      playbackMode: playbackModeRef,
-      startStop: startStopRef,
+    useEffect(() => {
+        const refs = {
+            keySelect: keySelectRef,
+            progressionButtons: progressionButtonsRef,
+            playbackMode: playbackModeRef,
+            startStop: startStopRef,
+        };
+        const targetKey = lesson[stepIndex].target;
+        const targetRef = refs[targetKey];
+
+        if (targetRef?.current) {
+            const rect = targetRef.current.getBoundingClientRect();
+            setPopupPosition({
+                top: rect.bottom + window.scrollY + 10,
+                left: rect.left + window.scrollX + rect.width / 2,
+            });
+        } else {
+            setPopupPosition({ top: window.innerHeight * 0.4, left: window.innerWidth * 0.75 });
+        }
+    }, [stepIndex]);
+
+    const handleLessonComplete = () => {
+        const highest = parseInt(localStorage.getItem("highestLessonCompleted") || "0");
+        if (highest < 3) {
+            localStorage.setItem("highestLessonCompleted", "3");
+        }
+        setLessonComplete(true);
+        if (onLessonComplete) onLessonComplete("lesson3");
+        setShowCongrats(true);
     };
-    const targetKey = lesson[stepIndex].target;
-    const targetRef = refs[targetKey];
 
-    if (targetRef?.current) {
-      const rect = targetRef.current.getBoundingClientRect();
-      setPopupPosition({
-        top: rect.bottom + window.scrollY + 10,
-        left: rect.left + window.scrollX + rect.width / 2,
-      });
-    } else {
-      setPopupPosition({ top: window.innerHeight * 0.4, left: window.innerWidth * 0.75 });
-    }
-  }, [stepIndex]);
+    useEffect(() => {
+        return () => {
+            Tone.Transport.stop();
+            Tone.Transport.cancel();
 
-  const handleLessonComplete = () => {
-    const highest = parseInt(localStorage.getItem("highestLessonCompleted") || "0");
-    if (highest < 3) {
-      localStorage.setItem("highestLessonCompleted", "3");
-    }
-    setLessonComplete(true);
-    if (onLessonComplete) onLessonComplete("lesson3");
-    setShowCongrats(true);
-  };
+            Tone.Destination.disconnect();
+            Tone.Destination.connect(Tone.getContext().destination);
 
-  return (
-    <>
-      {stepIndex < lesson.length && (
-        <div
-          className={`lesson-popup ${lesson[stepIndex].hasArrow ? "with-arrow" : ""}`}
-          style={{
-            position: "absolute",
-            top: popupPosition.top,
-            left: popupPosition.left,
-            transform: "translate(-50%, 0%)",
-          }}
-        >
-          <h4>{lesson[stepIndex].title}</h4>
-          <p>{lesson[stepIndex].text}</p>
-          <button
-            className="lesson-button"
-            onClick={isLastStep ? handleLessonComplete : () => setStepIndex(stepIndex + 1)}
-          >
-            {isLastStep ? "Complete Lesson" : "Next"}
-          </button>
-        </div>
-      )}
 
-      <div className="playground-header">
-        <h2 className="pixel-font playground-header-title">Lesson 3: Chord Progressions</h2>
-        <button className="home-button" onClick={() => navigate("/home")}>Home</button>
-      </div>
+            player?.dispose?.();
+            recorder?.dispose?.();
+            loop?.dispose?.();
+        };
+    }, []);
 
-      <div className="playground-container">
-        <Arpeggiator
-          keySelectRef={keySelectRef}
-          progressionButtonsRef={progressionButtonsRef}
-          playbackModeRef={playbackModeRef}
-          startStopRef={startStopRef}
-        />
-      </div>
+    return (
+        <>
+            {stepIndex < lesson.length && (
+                <div
+                    className={`lesson-popup ${lesson[stepIndex].hasArrow ? "with-arrow" : ""}`}
+                    style={{
+                        position: "absolute",
+                        top: popupPosition.top,
+                        left: popupPosition.left,
+                        transform: "translate(-50%, 0%)",
+                    }}
+                >
+                    <h4>{lesson[stepIndex].title}</h4>
+                    <p>{lesson[stepIndex].text}</p>
+                    <button
+                        className="lesson-button"
+                        onClick={isLastStep ? handleLessonComplete : () => setStepIndex(stepIndex + 1)}
+                    >
+                        {isLastStep ? "Complete Lesson" : "Next"}
+                    </button>
+                </div>
+            )}
 
-      {showCongrats && (
-        <CongratsModal
-          image={congratsImage}
-          onClose={() => setShowCongrats(false)}
-          onReturnHome={() => navigate("/home")}
-        />
-      )}
-    </>
-  );
+            <div className="playground-header">
+                <h2 className="pixel-font playground-header-title">Lesson 3: Chord Progressions</h2>
+                <button className="home-button" onClick={() => navigate("/home")}>Home</button>
+            </div>
+
+            <div className="playground-container">
+                <Arpeggiator
+                    keySelectRef={keySelectRef}
+                    progressionButtonsRef={progressionButtonsRef}
+                    playbackModeRef={playbackModeRef}
+                    startStopRef={startStopRef}
+                />
+            </div>
+
+            {showCongrats && (
+                <CongratsModal
+                    image={congratsImage}
+                    onClose={() => setShowCongrats(false)}
+                    onReturnHome={() => navigate("/home")}
+                />
+            )}
+        </>
+    );
 }

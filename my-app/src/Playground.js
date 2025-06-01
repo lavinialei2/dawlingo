@@ -190,7 +190,20 @@ const Playground = () => {
     );
   };
 
+  useEffect(() => {
+    return () => {
+      Tone.Transport.stop();
+      Tone.Transport.cancel();
 
+      Tone.Destination.disconnect();
+      Tone.Destination.connect(Tone.getContext().destination);
+
+
+      player?.dispose?.();
+      recorder?.dispose?.();
+      loop?.dispose?.();
+    };
+  }, []);
 
   return (
     <>

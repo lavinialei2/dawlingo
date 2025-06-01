@@ -96,6 +96,22 @@ export default function Lesson1({ onLessonComplete }) {
     setShowCongrats(true);
   };
 
+  useEffect(() => {
+    return () => {
+      Tone.Transport.stop();
+      Tone.Transport.cancel();
+
+      Tone.Destination.disconnect();
+      Tone.Destination.connect(Tone.getContext().destination);
+
+
+      player?.dispose?.();
+      recorder?.dispose?.();
+      loop?.dispose?.();
+    };
+  }, []);
+
+
   return (
     <>
       {stepIndex < lesson.length && (
