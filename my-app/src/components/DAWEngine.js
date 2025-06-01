@@ -249,21 +249,6 @@ export const DAWEngine = () => {
     );
   };
 
-  const moveClip = (trackId, clipIndex, newStart) => {
-    setTracks((prev) =>
-      prev.map((t) =>
-        t.id === trackId
-          ? {
-            ...t,
-            clips: t.clips.map((clip, i) =>
-              i === clipIndex ? { ...clip, start: Math.max(0, newStart) } : clip
-            ),
-          }
-          : t
-      )
-    );
-  };
-
   const deleteClip = (trackId, clipIndex) => {
     setTracks((prev) =>
       prev.map((t) =>
@@ -386,7 +371,6 @@ export const DAWEngine = () => {
     updateTrackClip,
     updateTrackVolume,
     toggleMuteTrack,
-    moveClip,
     deleteClip,
     setClipVolume,
   };
