@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import * as Tone from "tone";
 import { samplers } from "./samplers";
 
@@ -9,16 +9,171 @@ export const DAWEngine = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [playheadPosition, setPlayheadPosition] = useState(0);
   const scheduledParts = useRef([]);
-  const recordingRef = useRef(null);
 
-  const togglePlay = () => {
+
+  const startRecording = async () => {
+    if (!selectedTrackId) return;
+
+    const track = tracks.find((t) => t.id === selectedTrackId);
+    if (!track) return;
+
+    const startTime = Tone.Transport.seconds;
+
+    if (track.instrument === "microphone") {
+      await Tone.start();
+      const mic = new Tone.UserMedia();
+      await mic.open();
+
+      const rec = new Tone.Recorder();
+      mic.connect(rec);
+      rec.start();
+
+      if (Tone.Transport.state !== "started") Tone.Transport.start();
+      setIsPlaying(true);
+
+      const analyser = Tone.context.createAnalyser();
+      analyser.fftSize = 2048;
+      mic._mediaStream.connect(analyser);
+
+      setTracks((prev) =>
+        prev.map((t) =>
+          t.id === selectedTrackId
+            ? {
+              ...t,
+              clips: [
+                ...t.clips,
+                {
+                  url: null,
+                  start: startTime,
+                  duration: 0,
+                  volume: 1,
+                  isRecordingClip: true,
+                },
+              ],
+            }
+            : t
+        )
+      );
+
+      setIsRecording({ mic, rec, startTime, analyser });
+    } else if (track.instrument === "piano") {
+      if (Tone.Transport.state !== "started") Tone.Transport.start();
+      setIsPlaying(true);
+
+      setTracks((prev) =>
+        prev.map((t) =>
+          t.id === selectedTrackId
+            ? {
+              ...t,
+              clips: [
+                ...t.clips,
+                {
+                  start: startTime,
+                  duration: 0,
+                  volume: 1,
+                  isRecordingClip: true,
+                  isVirtual: true,
+                  notes: [],
+                },
+              ],
+            }
+            : t
+        )
+      );
+
+      setIsRecording({ startTime });
+    }
+  };
+
+  const stopRecording = useCallback(async () => {
+    if (!isRecording || !selectedTrackId) return;
+    const track = tracks.find((t) => t.id === selectedTrackId);
+    const endTime = Tone.Transport.seconds;
+
+    if (track.instrument === "microphone") {
+      const recording = await isRecording.rec.stop();
+      const blob = new Blob([recording], { type: "audio/wav" });
+      const url = URL.createObjectURL(blob);
+
+      const player = new Tone.Player({
+        url,
+        autostart: false,
+        onload: () => {
+          const clip = {
+            url,
+            start: isRecording.startTime,
+            duration: player.buffer.duration,
+            volume: 1,
+            waveform: null,
+            player,
+          };
+          player.connect(track.gainNode);
+          player.sync().start(clip.start);
+
+          setTracks((prev) =>
+            prev.map((t) =>
+              t.id === selectedTrackId
+                ? {
+                  ...t,
+                  clips: [
+                    ...t.clips.filter((c) => !c.isRecordingClip),
+                    clip,
+                  ],
+                }
+                : t
+            )
+          );
+          setIsRecording(false);
+        },
+      });
+
+      isRecording.mic.disconnect();
+    } else if (track.instrument === "piano") {
+      const recordingClip = track.clips.find(
+        (clip) => clip.isRecordingClip && clip.isVirtual
+      );
+      if (!recordingClip) return;
+
+      const finalized = {
+        ...recordingClip,
+        isRecordingClip: false,
+        duration: endTime - recordingClip.start,
+      };
+
+      setTracks((prev) =>
+        prev.map((t) =>
+          t.id === selectedTrackId
+            ? {
+              ...t,
+              clips: [
+                ...t.clips.filter((c) => c !== recordingClip),
+                finalized,
+              ],
+            }
+            : t
+        )
+      );
+
+      setIsRecording(false);
+    }
+  }, [isRecording, selectedTrackId, tracks]);
+
+
+  const togglePlay = useCallback(() => {
     setIsPlaying((prev) => {
       const newVal = !prev;
-      if (newVal) Tone.Transport.start();
-      else Tone.Transport.pause();
+      if (newVal) {
+        Tone.Transport.start();
+      } else {
+        Tone.Transport.pause();
+        if (isRecording) {
+          stopRecording();  // Ensure recording stops when paused
+        }
+      }
       return newVal;
     });
-  };
+  }, [isRecording, stopRecording])
+
 
   const onScrubPlayhead = (seconds) => {
     Tone.Transport.seconds = seconds;
@@ -134,152 +289,6 @@ export const DAWEngine = () => {
     );
   };
 
-  const startRecording = async () => {
-    if (!selectedTrackId) return;
-
-    const track = tracks.find((t) => t.id === selectedTrackId);
-    if (!track) return;
-
-    const startTime = Tone.Transport.seconds;
-
-    if (track.instrument === "microphone") {
-      await Tone.start();
-      const mic = new Tone.UserMedia();
-      await mic.open();
-
-      const rec = new Tone.Recorder();
-      mic.connect(rec);
-      rec.start();
-
-      if (Tone.Transport.state !== "started") Tone.Transport.start();
-      setIsPlaying(true);
-
-      const analyser = Tone.context.createAnalyser();
-      analyser.fftSize = 2048;
-      mic._mediaStream.connect(analyser);
-
-      setTracks((prev) =>
-        prev.map((t) =>
-          t.id === selectedTrackId
-            ? {
-              ...t,
-              clips: [
-                ...t.clips,
-                {
-                  url: null,
-                  start: startTime,
-                  duration: 0,
-                  volume: 1,
-                  isRecordingClip: true,
-                },
-              ],
-            }
-            : t
-        )
-      );
-
-      setIsRecording({ mic, rec, startTime, analyser });
-    } else if (track.instrument === "piano") {
-      if (Tone.Transport.state !== "started") Tone.Transport.start();
-      setIsPlaying(true);
-
-      setTracks((prev) =>
-        prev.map((t) =>
-          t.id === selectedTrackId
-            ? {
-              ...t,
-              clips: [
-                ...t.clips,
-                {
-                  start: startTime,
-                  duration: 0,
-                  volume: 1,
-                  isRecordingClip: true,
-                  isVirtual: true,
-                  notes: [],
-                },
-              ],
-            }
-            : t
-        )
-      );
-
-      setIsRecording({ startTime });
-    }
-  };
-
-  const stopRecording = async () => {
-    if (!isRecording || !selectedTrackId) return;
-    const track = tracks.find((t) => t.id === selectedTrackId);
-    const endTime = Tone.Transport.seconds;
-
-    if (track.instrument === "microphone") {
-      const recording = await isRecording.rec.stop();
-      const blob = new Blob([recording], { type: "audio/wav" });
-      const url = URL.createObjectURL(blob);
-
-      const player = new Tone.Player({
-        url,
-        autostart: false,
-        onload: () => {
-          const clip = {
-            url,
-            start: isRecording.startTime,
-            duration: player.buffer.duration,
-            volume: 1,
-            waveform: null,
-            player,
-          };
-          player.connect(track.gainNode);
-          player.sync().start(clip.start);
-
-          setTracks((prev) =>
-            prev.map((t) =>
-              t.id === selectedTrackId
-                ? {
-                  ...t,
-                  clips: [
-                    ...t.clips.filter((c) => !c.isRecordingClip),
-                    clip,
-                  ],
-                }
-                : t
-            )
-          );
-          setIsRecording(false);
-        },
-      });
-
-      isRecording.mic.disconnect();
-    } else if (track.instrument === "piano") {
-      const recordingClip = track.clips.find(
-        (clip) => clip.isRecordingClip && clip.isVirtual
-      );
-      if (!recordingClip) return;
-
-      const finalized = {
-        ...recordingClip,
-        isRecordingClip: false,
-        duration: endTime - recordingClip.start,
-      };
-
-      setTracks((prev) =>
-        prev.map((t) =>
-          t.id === selectedTrackId
-            ? {
-              ...t,
-              clips: [
-                ...t.clips.filter((c) => c !== recordingClip),
-                finalized,
-              ],
-            }
-            : t
-        )
-      );
-
-      setIsRecording(false);
-    }
-  };
 
   useEffect(() => {
     const handleKeyDown = (e) => {

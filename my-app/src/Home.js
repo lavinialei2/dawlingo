@@ -34,8 +34,7 @@ const Home = () => {
   };
 
   const navigateToLesson = (lessonIndex) => {
-    // temp logic: only allow to click on first lesson !!
-    lessonIndex > 1 ? setShowUnavailable(true) : navigate(`/lesson${lessonIndex + 1}`);
+    lessonIndex > 2 ? setShowUnavailable(true) : navigate(`/lesson${lessonIndex + 1}`);
   };
 
 
@@ -46,14 +45,21 @@ const Home = () => {
         <div className="flex items-center gap-2">
           <h1 className="pixel-font font-bold text-white">DAWlingo</h1>
         </div>
-        <playground-button
-          onClick={navigateToPlayground}
-          className="bg-dawlingo-light-pink rounded-full p-2 hover:bg-opacity-80 transition-all"
-          aria-label="Go to playground"
-        >
-          <Playground width={80} height={80} fill="white" />
-        </playground-button>
       </header>
+
+      <div className="playground-button-bottom-left">
+        <ToolButton
+          onClick={() => navigateToPlayground()}
+          style={{
+            width: "120px",
+            height: "120px"
+          }}
+        >
+          <Playground width={90} height={90} fill="white" />
+        </ToolButton>
+        <span className="text-sm mt-1 font-semibold text-gray-800">Playground</span>
+      </div>
+
 
       <div className="progress-button-bottom-right">
         <button className="progress-button" onClick={() => setShowProgress(true)}><b>Progress</b></button>
