@@ -6,12 +6,14 @@ export const getUnlockedFeatures = (highestLessonCompleted) => {
       reverb: true,
       eq: true,
       piano: true,
+      arp: true,
     };
   
     const unlockMap = [
       [],
       [],
       ['piano'],
+      ['piano', 'arp'],
       ['piano', 'compressor', 'eq', 'reverb'],
     ];
   

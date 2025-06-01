@@ -77,11 +77,11 @@ const lessons = [
     ],
   },
   {
-    title: "Lesson 2: Instruments",
+    title: "Lesson 2: Piano MIDI",
     steps: [
       {
         title: "Welcome to Lesson 2!",
-        text: "In this lesson, you'll learn how to add tracks and choose different instruments.",
+        text: "In this lesson, you'll learn how to add virtual instruments like the piano to your tracks.",
         target: "none",
         hasArrow: false
       },
@@ -128,7 +128,48 @@ const lessons = [
         hasArrow: true,
       },
     ]
-  },  
+  },
+  {
+    title: "Lesson 3: Chord Progressions",
+    steps: [
+      {
+        title: "Welcome to Lesson 3!",
+        text: "(Slight) music theory break! Here you'll learn about chords and arpeggios, and how they can help you create songs.",
+        target: "none",
+        hasArrow: false
+      },
+      {
+        title: "What is a chord and arpeggio?",
+        text: "A chord is a group of notes played together that usually sound nice harmonically. An arpeggio is like a broken up chord, played sequentially, one note at a time.",
+        target: "none",
+        hasArrow: false
+      },
+      {
+        title: "What is a chord progression?",
+        text: "There's a lot more you can learn about chords and music theory, but a chord progression is a series of chords played in succession, which kind of shape the vibes of a song.",
+        target: "none",
+        hasArrow: false
+      },
+      {
+        title: "Progressions are very reused",
+        text: "You can definitely get creative and experiment with your progressions, but a most songs, particularly in pop, all reuse the same couple of chord progressions.",
+        target: "none",
+        hasArrow: false
+      },
+      {
+        title: "Common Pop and Jazz Progressions",
+        text: "Here, we present some of the common chord progressions found in pop and jazz songs. The roman numerals represent what chords are being played, but if you don't understand them, just give them a listen and see what you like.",
+        target: "none",
+        hasArrow: false
+      },
+      {
+        title: "Play with the arpeggiator",
+        text: "Select a progression, and select whether you'd like to hear the notes individually (as an arpeggio), or together (as a chord). Then click play to listen and jam along! You can change the key and tempo as well if you wish, but vibes are most heavily influenced by the progression :)",
+        target: "none",
+        hasArrow: false
+      },
+    ]
+  },
 ];
 
 export default lessons;

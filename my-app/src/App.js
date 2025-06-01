@@ -4,6 +4,7 @@ import Home from './Home';
 import Playground from "./Playground";
 import Lesson1 from "./Lesson1";
 import Lesson2 from "./Lesson2";
+import Lesson3 from "./Lesson3";
 import { getUnlockedFeatures } from './featureUnlocks';
 
 function App() {
@@ -30,6 +31,12 @@ function App() {
           path="/lesson2"
           element={
             <Lesson2 unlockFeature={unlockFeature} featureLocks={featureLocks} />
+          }
+        />
+        <Route
+          path="/lesson3"
+          element={
+            <Lesson3 unlockFeature={unlockFeature} featureLocks={featureLocks} />
           }
         />
         <Route

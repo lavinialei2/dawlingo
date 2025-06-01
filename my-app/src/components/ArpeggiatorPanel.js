@@ -23,7 +23,6 @@ const CHORD_FORMULAS = {
     add9: [0, 4, 7, 14]
 };
 
-// --- MIDI and scale mappings ---
 const NOTE_TO_MIDI = {
     C: 48, "C#": 49, D: 50, "D#": 51, E: 52,
     F: 53, "F#": 54, G: 55, "G#": 56, A: 57,
@@ -39,7 +38,6 @@ const DEGREE_TO_INDEX = {
 
 const ALL_KEYS = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
 
-// --- Progressions by genre ---
 const PROGRESSIONS_BY_GENRE = {
     Pop: {
         "I–V–vi–IV": [
@@ -104,7 +102,6 @@ const PROGRESSIONS_BY_GENRE = {
     }
 };
 
-// --- Helpers ---
 function normalizeNoteName(note) {
     return note.replace("♭", "b").replace("♯", "#")
         .replace("Db", "C#")
@@ -130,12 +127,10 @@ function midiToNoteName(midi) {
 function buildChord(root, type) {
     const baseMidi = NOTE_TO_MIDI[normalizeNoteName(root)];
     const intervals = CHORD_FORMULAS[type];
-
     if (baseMidi === undefined || intervals === undefined) {
         console.warn(`Unknown chord: root=${root}, type=${type}`);
         return [];
     }
-
     return intervals.map(semitone => baseMidi + semitone);
 }
 
@@ -146,16 +141,15 @@ function getChordSequenceForKey(prog, key) {
     });
 }
 
-// --- Main component ---
 export default function Arpeggiator({ disabled = false }) {
     const [selectedGenre, setSelectedGenre] = useState("Pop");
     const [selectedProgressionName, setSelectedProgressionName] = useState("I–V–vi–IV");
     const [selectedKey, setSelectedKey] = useState("C");
     const [tempo, setTempo] = useState(144);
+    const [playMode, setPlayMode] = useState("arpeggio");
+    const [isPlayingArpeggiator, setIsPlayingArpeggiator] = useState(false);
     const synthRef = useRef(null);
     const loopRef = useRef(null);
-    const [playMode, setPlayMode] = useState("arpeggio"); // or "chord"
-
 
     useEffect(() => {
         synthRef.current = new Tone.PolySynth(Tone.Synth).toDestination();
@@ -170,23 +164,19 @@ export default function Arpeggiator({ disabled = false }) {
     const startArpeggiatorLoop = async () => {
         await Tone.start();
         stopArpeggiatorLoop();
-
         const chords = getChordSequenceForKey(
             PROGRESSIONS_BY_GENRE[selectedGenre][selectedProgressionName],
             selectedKey
         );
 
         let chordIndex = 0;
+
         const playChordPattern = (time, chord) => {
             const { root, type } = chord;
             const baseChord = buildChord(root, type);
 
             if (playMode === "chord") {
-                const durations = [
-                    "4n.", "4n.", "4n", // measure 1
-                    "4n.", "4n.", "4n"  // measure 2
-                ];
-
+                const durations = ["4n.", "4n.", "4n", "4n.", "4n.", "4n"];
                 let currentTime = time;
                 durations.forEach((dur) => {
                     baseChord.forEach((midi) => {
@@ -198,20 +188,13 @@ export default function Arpeggiator({ disabled = false }) {
                 return;
             }
 
-            // Arpeggio mode
             const pattern = [
-                baseChord[0],
-                baseChord[1],
-                baseChord[2],
+                baseChord[0], baseChord[1], baseChord[2],
                 baseChord[3] || baseChord[0] + 12,
-                baseChord[2],
-                baseChord[1],
-                baseChord[0],
-                baseChord[1],
-                baseChord[2],
+                baseChord[2], baseChord[1], baseChord[0],
+                baseChord[1], baseChord[2],
                 baseChord[3] || baseChord[0] + 12,
-                baseChord[2],
-                baseChord[1],
+                baseChord[2], baseChord[1],
             ];
 
             pattern.forEach((midi, i) => {
@@ -220,8 +203,6 @@ export default function Arpeggiator({ disabled = false }) {
             });
         };
 
-
-
         loopRef.current = new Tone.Loop((time) => {
             playChordPattern(time, chords[chordIndex]);
             chordIndex = (chordIndex + 1) % chords.length;
@@ -229,6 +210,7 @@ export default function Arpeggiator({ disabled = false }) {
 
         loopRef.current.start("+0.1");
         Tone.Transport.start();
+        setIsPlayingArpeggiator(true);
     };
 
     const stopArpeggiatorLoop = () => {
@@ -237,7 +219,6 @@ export default function Arpeggiator({ disabled = false }) {
             loopRef.current.cancel();
             loopRef.current = null;
         }
-
         Tone.Transport.stop();
         Tone.Transport.cancel();
 
@@ -246,79 +227,35 @@ export default function Arpeggiator({ disabled = false }) {
             synthRef.current.dispose();
             synthRef.current = new Tone.PolySynth(Tone.Synth).toDestination();
         }
+        setIsPlayingArpeggiator(false);
     };
 
     return (
-        <div style={{
-            width: "90%",
-            backgroundColor: "#2a2a2a",
-            border: "2px solid #444",
-            borderRadius: "12px",
-            color: "#ffffff",
-            fontFamily: "'Segoe UI', sans-serif",
-            marginTop: "2rem"
-        }}>
-            {/* Header */}
-            <div style={{
-                backgroundColor: "#7e6fe1",
-                color: "#000",
-                padding: "1rem",
-                fontSize: "18px",
-                fontWeight: "bold",
-                textAlign: "center",
-                borderTopLeftRadius: "10px",
-                borderTopRightRadius: "10px"
-            }}>
+        <div style={{ width: "90%", backgroundColor: "#2a2a2a", border: "2px solid #444", borderRadius: "12px", color: "#ffffff", fontFamily: "'Segoe UI', sans-serif", marginTop: "2rem" }}>
+            <div style={{ backgroundColor: "#7e6fe1", color: "#000", padding: "1rem", fontSize: "18px", fontWeight: "bold", textAlign: "center", borderTopLeftRadius: "10px", borderTopRightRadius: "10px" }}>
                 {disabled ? "Arpeggiator (Locked)" : "Arpeggiator"}
             </div>
-
-            {/* Body */}
             <div style={{ padding: "1.5rem" }}>
                 {/* Key Selection */}
                 <div style={{ marginBottom: "1.5rem" }}>
                     <label style={{ fontWeight: "bold", marginRight: "10px" }}>Key:</label>
-                    <select
-                        disabled={disabled}
-                        value={selectedKey}
-                        onChange={(e) => setSelectedKey(e.target.value)}
-                        style={{
-                            padding: "8px 12px",
-                            fontSize: "14px",
-                            borderRadius: "6px",
-                            border: "1px solid #888",
-                            backgroundColor: "#1f1f1f",
-                            color: "#fff"
-                        }}
-                    >
+                    <select disabled={disabled} value={selectedKey} onChange={(e) => setSelectedKey(e.target.value)}
+                        style={{ padding: "8px 12px", fontSize: "14px", borderRadius: "6px", border: "1px solid #888", backgroundColor: "#1f1f1f", color: "#fff" }}>
                         {ALL_KEYS.map((key) => (
                             <option key={key} value={normalizeNoteName(key)}>{key}</option>
                         ))}
                     </select>
                 </div>
 
-                {/* Tempo Input */}
+                {/* Tempo */}
                 <div style={{ marginBottom: "1.5rem" }}>
                     <label style={{ fontWeight: "bold", marginRight: "10px" }}>Tempo (BPM):</label>
-                    <input
-                        disabled={disabled}
-                        type="number"
-                        min={60}
-                        max={180}
-                        value={tempo}
+                    <input disabled={disabled} type="number" min={60} max={180} value={tempo}
                         onChange={(e) => {
                             const val = parseInt(e.target.value);
                             if (val >= 60 && val <= 180) setTempo(val);
                         }}
-                        style={{
-                            width: "80px",
-                            padding: "8px",
-                            fontSize: "14px",
-                            borderRadius: "6px",
-                            border: "1px solid #888",
-                            backgroundColor: "#1f1f1f",
-                            color: "#fff"
-                        }}
-                    />
+                        style={{ width: "80px", padding: "8px", fontSize: "14px", borderRadius: "6px", border: "1px solid #888", backgroundColor: "#1f1f1f", color: "#fff" }} />
                 </div>
 
                 {/* Pop Progressions */}
@@ -340,14 +277,8 @@ export default function Arpeggiator({ disabled = false }) {
                                     fontWeight: 600,
                                     borderRadius: "9999px",
                                     border: "none",
-                                    backgroundColor:
-                                        selectedGenre === "Pop" && selectedProgressionName === name
-                                            ? "#7e6fe1"
-                                            : "#444",
-                                    color:
-                                        selectedGenre === "Pop" && selectedProgressionName === name
-                                            ? "#000"
-                                            : "#fff",
+                                    backgroundColor: selectedGenre === "Pop" && selectedProgressionName === name ? "#7e6fe1" : "#444",
+                                    color: selectedGenre === "Pop" && selectedProgressionName === name ? "#000" : "#fff",
                                     cursor: "pointer"
                                 }}
                             >
@@ -376,14 +307,8 @@ export default function Arpeggiator({ disabled = false }) {
                                     fontWeight: 600,
                                     borderRadius: "9999px",
                                     border: "none",
-                                    backgroundColor:
-                                        selectedGenre === "Jazz" && selectedProgressionName === name
-                                            ? "#9370db"
-                                            : "#444",
-                                    color:
-                                        selectedGenre === "Jazz" && selectedProgressionName === name
-                                            ? "#000"
-                                            : "#fff",
+                                    backgroundColor: selectedGenre === "Jazz" && selectedProgressionName === name ? "#9370db" : "#444",
+                                    color: selectedGenre === "Jazz" && selectedProgressionName === name ? "#000" : "#fff",
                                     cursor: "pointer"
                                 }}
                             >
@@ -393,6 +318,7 @@ export default function Arpeggiator({ disabled = false }) {
                     </div>
                 </div>
 
+                {/* Mode toggle */}
                 <div style={{ display: "flex", justifyContent: "center", gap: "1rem", margin: "1rem 0" }}>
                     <button
                         disabled={disabled}
@@ -426,42 +352,27 @@ export default function Arpeggiator({ disabled = false }) {
                     </button>
                 </div>
 
-
-                {/* Play / Stop Buttons */}
+                {/* Toggle Play/Stop */}
                 <div style={{ textAlign: "center", marginTop: "20px" }}>
                     <button
                         disabled={disabled}
-                        onClick={startArpeggiatorLoop}
+                        onClick={() => {
+                            isPlayingArpeggiator ? stopArpeggiatorLoop() : startArpeggiatorLoop();
+                        }}
                         style={{
                             padding: "10px 18px",
                             fontWeight: 600,
                             fontSize: "14px",
                             borderRadius: "9999px",
                             border: "none",
-                            backgroundColor: "#7e6fe1",
-                            color: "#000",
+                            backgroundColor: isPlayingArpeggiator ? "#777" : "#7e6fe1",
+                            color: isPlayingArpeggiator ? "#fff" : "#000",
                             cursor: "pointer"
                         }}>
-                        Play
-                    </button>
-                    <button
-                        disabled={disabled}
-                        onClick={stopArpeggiatorLoop}
-                        style={{
-                            padding: "10px 18px",
-                            fontWeight: 600,
-                            fontSize: "14px",
-                            borderRadius: "9999px",
-                            border: "none",
-                            backgroundColor: "#777",
-                            color: "#fff",
-                            cursor: "pointer"
-                        }}>
-                        Stop
+                        {isPlayingArpeggiator ? "Stop" : "Play"}
                     </button>
                 </div>
             </div>
         </div>
-
     );
 }
