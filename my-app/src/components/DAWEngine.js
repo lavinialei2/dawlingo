@@ -91,7 +91,19 @@ export const DAWEngine = () => {
     const endTime = Tone.Transport.seconds;
 
     if (track.instrument === "microphone") {
-      const recording = await isRecording.rec.stop();
+      let recording;
+      try {
+        if (isRecording.rec && isRecording.rec.state === "started") {
+          recording = await isRecording.rec.stop();
+        } else {
+          console.warn("Recorder was not started or already stopped.");
+          return;
+        }
+      } catch (err) {
+        console.error("Failed to stop recorder:", err);
+        return;
+      }
+
       const blob = new Blob([recording], { type: "audio/wav" });
       const url = URL.createObjectURL(blob);
 
