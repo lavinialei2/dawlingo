@@ -14,7 +14,7 @@ npm install
 npm install tone
 ```
 
-To run the app, code
+To run the app, use the command
 ```
 npm start
 ```

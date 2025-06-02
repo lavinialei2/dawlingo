@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import './index.css'; 
+import './index.css';
 import { useNavigate } from 'react-router-dom';
 import LevelDescrip from './LevelDescrip'
 import ToolButton from './components/ToolButton'
@@ -9,7 +9,7 @@ import './components/ToolButton.css'
 import UnavailableLessonModal from "./components/UnavailableLessonModal";
 import unavailableLesson from "./assets/unavailable.png";
 import { ReactComponent as Playground } from './assets/Playground.svg';
-import './ProgressButton.css'; 
+import './ProgressButton.css';
 import ProgressPopUp from "./components/ProgressPopUp";
 import lesson0 from "./assets/0lesson.png";
 import lesson1 from "./assets/1lesson.png";
@@ -20,7 +20,6 @@ import lesson2 from "./assets/2lesson.png";
 const Home = () => {
   const navigate = useNavigate();
   const [showUnavailable, setShowUnavailable] = useState(false);
-  const [showPlaygroundIntro, setShowPlaygroundIntro] = useState(false);
   const [highestLessonCompleted, setHighestLessonCompleted] = useState(0);
   const [showProgress, setShowProgress] = useState(false);
   const lessonPopUp = [lesson0, lesson1, lesson2]
@@ -31,48 +30,53 @@ const Home = () => {
   }, []);
 
   const navigateToPlayground = () => {
-    localStorage.setItem("showPlaygroundIntro", "true");
     navigate('/playground');
   };
 
   const navigateToLesson = (lessonIndex) => {
-    // temp logic: only allow to click on first lesson !!
-    lessonIndex > 0 ? setShowUnavailable(true) : navigate(`/lesson${lessonIndex + 1}`);
+    lessonIndex > 2 ? setShowUnavailable(true) : navigate(`/lesson${lessonIndex + 1}`);
   };
-  
+
 
   return (
-    
+
     <div className="min-h-screen dawlingo-light-pink">
-      <header className="dawlingo-pink py-4 px-6 flex justify-between items-center"> 
+      <header className="dawlingo-pink py-4 px-6 flex justify-between items-center">
         <div className="flex items-center gap-2">
           <h1 className="pixel-font font-bold text-white">DAWlingo</h1>
         </div>
-        <playground-button 
-          onClick={navigateToPlayground}
-          className="bg-dawlingo-light-pink rounded-full p-2 hover:bg-opacity-80 transition-all"
-          aria-label="Go to playground"
-        >
-          <Playground width={80} height={80} fill="white" />
-        </playground-button>
       </header>
-     
-        <div class ="progress-button-bottom-right">
-           <button className ="progress-button" onClick={() => setShowProgress(true)}><b>Progress</b></button> 
-        </div>
-     
-     <main className="container max-w-3xl mx-auto py-8 px-4">
+
+      <div className="playground-button-bottom-left">
+        <ToolButton
+          onClick={() => navigateToPlayground()}
+          style={{
+            width: "120px",
+            height: "120px"
+          }}
+        >
+          <Playground width={90} height={90} fill="white" />
+        </ToolButton>
+        <span className="text-sm mt-1 font-semibold text-gray-800">Playground</span>
+      </div>
+
+
+      <div className="progress-button-bottom-right">
+        <button className="progress-button" onClick={() => setShowProgress(true)}><b>Progress</b></button>
+      </div>
+
+      <main className="container max-w-3xl mx-auto py-8 px-4">
         <div className="space-y-8">
           {levels.map((level, levelIndex) => (
             <div key={level.id} className="space-y-4">
-              <LevelDescrip 
+              <LevelDescrip
                 title={level.title}
                 description={level.description}
               />
-              
+
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 pl-4">
                 {level.lessons.map((tool, lessonIndex) => {
-                  const globalLessonIndex = levelIndex === 0 ? lessonIndex : levels[0].lessons.length + lessonIndex;
+                  const globalLessonIndex = levels.slice(0, levelIndex).reduce((sum, level) => sum + level.lessons.length, 0) + lessonIndex;
                   const isUnlocked = globalLessonIndex <= highestLessonCompleted;
 
                   return (
@@ -96,22 +100,22 @@ const Home = () => {
           ))}
         </div>
       </main>
-            {showUnavailable && (
+      {showUnavailable && (
         <UnavailableLessonModal
           image={unavailableLesson}
           onClose={() => {
             setShowUnavailable(false);
           }}
         />
-    )}
+      )}
 
-    {showProgress && (
-          <ProgressPopUp
+      {showProgress && (
+        <ProgressPopUp
           image={lessonPopUp[highestLessonCompleted]}
           onClose={() => {
-              setShowProgress(false);
+            setShowProgress(false);
           }}
-          />
+        />
       )}
     </div>
   );
