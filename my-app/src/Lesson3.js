@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Arpeggiator from "./components/ArpeggiatorPanel";
 import CongratsModal from "./components/CongratsModal";
 import lessons from "./Lessons";
-import congratsImage from "./assets/lvl2complete.png"; // update this later
+import congratsImage from "./assets/lvl3complete.png"; // update this later
 import "./App.css";
 import "./Playground.css";
 import "./Lessons.css";

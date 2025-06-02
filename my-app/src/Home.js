@@ -14,6 +14,7 @@ import ProgressPopUp from "./components/ProgressPopUp";
 import lesson0 from "./assets/0lesson.png";
 import lesson1 from "./assets/1lesson.png";
 import lesson2 from "./assets/2lesson.png";
+import lesson3 from "./assets/3lesson.png";
 
 
 
@@ -22,7 +23,7 @@ const Home = () => {
   const [showUnavailable, setShowUnavailable] = useState(false);
   const [highestLessonCompleted, setHighestLessonCompleted] = useState(0);
   const [showProgress, setShowProgress] = useState(false);
-  const lessonPopUp = [lesson0, lesson1, lesson2]
+  const lessonPopUp = [lesson0, lesson1, lesson2, lesson3]
 
   useEffect(() => {
     const stored = parseInt(localStorage.getItem("highestLessonCompleted") || "0");
