@@ -44,6 +44,10 @@ const Playground = () => {
   } = DAWEngine();
 
   useEffect(() => {
+    onScrubPlayhead(0); // reset playhead to the start on initial load
+  }, []);
+
+  useEffect(() => {
     if (!localStorage.getItem("hasSeenPlaygroundIntro")) {
       setShowIntro(true);
       localStorage.setItem("hasSeenPlaygroundIntro", "true");

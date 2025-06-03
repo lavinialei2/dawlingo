@@ -51,6 +51,10 @@ export default function Lesson1({ onLessonComplete }) {
   const muteRef = useRef(null);
 
   useEffect(() => {
+    onScrubPlayhead(0); // reset playhead to the start on initial load
+  }, []);
+
+  useEffect(() => {
     const highest = parseInt(localStorage.getItem("highestLessonCompleted") || "0");
     setLessonComplete(highest >= 1);
   }, []);
@@ -79,7 +83,7 @@ export default function Lesson1({ onLessonComplete }) {
       const extraOffsetX = isArrowLeft ? 70 : 0;
       setPopupPosition({
         top: rect.top + window.scrollY + 50,
-        left: rect.left + window.scrollX + rect.width / 2 + extraOffsetX,
+        left: rect.left + window.scrollX + rect.width / 2 + extraOffsetX + 30,
       });
     }
   }, [stepIndex]);
