@@ -4,7 +4,7 @@ import Timeline from "./components/Timeline";
 import InstrumentSelectModal from "./components/InstrumentSelectModal";
 import CongratsModal from "./components/CongratsModal";
 import PianoPanel from "./components/PianoPanel";
-import LiveWaveform from "./components/LiveWaveform";
+import * as Tone from "tone";
 
 import congratsImage from "./assets/lvl2complete.png";
 import { useNavigate } from "react-router-dom";
@@ -46,6 +46,15 @@ export default function Lesson2({ onLessonComplete }) {
     setClipVolume,
   } = DAWEngine();
 
+  const handleUserInteraction = async (setHasInteracted) => {
+    try {
+      await Tone.start(); // Resume audio context if needed
+      setHasInteracted(true);
+    } catch (err) {
+      console.error("Failed to start audio context:", err);
+    }
+  };
+
   const addTrackButtonRef = useRef(null);
   const playButtonRef = useRef(null);
   const recordRef = useRef(null);
@@ -55,6 +64,11 @@ export default function Lesson2({ onLessonComplete }) {
   const volumeRef = useRef(null);
   const muteRef = useRef(null);
   const pianoRef = useRef(null);
+
+  useEffect(() => {
+    onScrubPlayhead(0); // reset playhead to the start on initial load
+  }, []);
+
 
   useEffect(() => {
     const highest = parseInt(localStorage.getItem("highestLessonCompleted") || "0");
@@ -147,9 +161,9 @@ export default function Lesson2({ onLessonComplete }) {
           <button
             ref={addTrackButtonRef}
             className={lesson[stepIndex]?.target === "addTrack" ? "highlight-button" : ""}
-            onClick={() => {
+            onClick={async () => {
+              await handleUserInteraction(setHasInteracted);
               setShowInstrumentModal(true);
-              if (lesson[stepIndex]?.target === "addTrack") setHasInteracted(true);
             }}
           >
             Add Track
@@ -158,10 +172,22 @@ export default function Lesson2({ onLessonComplete }) {
           <button
             ref={recordRef}
             className={lesson[stepIndex]?.target === "recordButton" ? "highlight-button" : ""}
-            onClick={() => {
+            onClick={async () => {
+              await handleUserInteraction(setHasInteracted);
+
+              const trackReady = tracks.find((t) => t.id === selectedTrackId);
+              if (!trackReady) {
+                console.warn("Attempted to record before track was ready.");
+                return;
+              }
+
               isRecording ? stopRecording() : startRecording();
-              if (lesson[stepIndex]?.target === "recordButton") setHasInteracted(true);
+
+              if (lesson[stepIndex]?.target === "recordButton") {
+                setHasInteracted(true);
+              }
             }}
+
             disabled={!selectedTrackId}
           >
             {isRecording ? "Stop Recording" : "Record"}
@@ -246,10 +272,12 @@ export default function Lesson2({ onLessonComplete }) {
 
       {showInstrumentModal && (
         <InstrumentSelectModal
-          onSelect={(instrument) => {
-            addTrack(instrument);
+          onSelect={(instrumentType) => {
+            addTrack(instrumentType);
             setShowInstrumentModal(false);
-            if (lesson[stepIndex]?.target === "addTrack") setHasInteracted(true);
+            if (lesson[stepIndex]?.target === "addTrack") {
+              setHasInteracted(true);
+            }
           }}
           onClose={() => setShowInstrumentModal(false)}
         />

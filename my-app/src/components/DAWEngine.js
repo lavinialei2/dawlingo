@@ -19,6 +19,15 @@ export const DAWEngine = () => {
 
     const startTime = Tone.Transport.seconds;
 
+    await Tone.start(); // Ensure audio context is resumed
+
+    // Guard against race condition with track lookup
+    if (!track || !track.instrument) {
+      console.warn("No valid track selected for recording.");
+      return;
+    }
+
+
     if (track.instrument === "microphone") {
       await Tone.start();
       const mic = new Tone.UserMedia();

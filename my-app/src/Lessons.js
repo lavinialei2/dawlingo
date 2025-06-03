@@ -16,7 +16,7 @@ const lessons = [
       },
       {
         title: "Add a Track",
-        text: "Click the 'Add Track' button to create a new track. The selected track will be outlined in blue.",
+        text: "Click the 'Add Track' button to create a new track. The selected track will be outlined in blue. Click next once you have added a track.",
         target: "addTrack",
         hasArrow: true
       },
@@ -28,7 +28,7 @@ const lessons = [
       },
       {
         title: "Pause",
-        text: "Press 'Pause' to stop playing as well.",
+        text: "Press 'Pause' to stop the playhead as well.",
         target: "playButton",
         hasArrow: true
       },
@@ -46,7 +46,7 @@ const lessons = [
       },
       {
         title: "Playhead",
-        text: "You can also use the slider to adjust the playhead to where you want it.",
+        text: "You can also use the slider to adjust the playhead to where you want it. Make sure the playhead is paused before adjusting it.",
         target: "playheadSlider",
         hasArrow: true
       },
