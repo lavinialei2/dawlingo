@@ -1,5 +1,7 @@
 <img src="/DAWlogo.png" width="400">
 
+This project is now hosted on https://dawlingo.vercel.app/
+
 # Setting up on local machine
 
 First clone the repository using
