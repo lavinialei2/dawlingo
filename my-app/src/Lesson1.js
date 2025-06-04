@@ -79,11 +79,11 @@ export default function Lesson1({ onLessonComplete }) {
 
     if (targetRef?.current) {
       const rect = targetRef.current.getBoundingClientRect();
-      const isArrowLeft = [6, 7, 9].includes(stepIndex);
+      const isArrowLeft = [7, 8, 10].includes(stepIndex);
       const extraOffsetX = isArrowLeft ? 70 : 0;
       setPopupPosition({
         top: rect.top + window.scrollY + 50,
-        left: rect.left + window.scrollX + rect.width / 2 + extraOffsetX + 30,
+        left: rect.left + window.scrollX + rect.width / 2 + extraOffsetX,
       });
     }
   }, [stepIndex]);
@@ -105,7 +105,7 @@ export default function Lesson1({ onLessonComplete }) {
     <>
       {stepIndex < lesson.length && (
         <div
-          className={`lesson-popup ${lesson[stepIndex].hasArrow ? "with-arrow" : ""} ${(stepIndex === 6 || stepIndex === 7 || stepIndex === 9) ? "arrow-left" : "arrow-center"}`}
+          className={`lesson-popup ${lesson[stepIndex].hasArrow ? "with-arrow" : ""} ${(stepIndex === 7 || stepIndex === 8 || stepIndex === 10) ? "arrow-left" : "arrow-center"}`}
           style={{
             position: [0, 1].includes(stepIndex) ? "fixed" : "absolute",
             top: [0, 1].includes(stepIndex) ? "50%" : popupPosition.top,
