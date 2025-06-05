@@ -117,6 +117,16 @@ export default function Lesson2({ onLessonComplete }) {
     setShowCongrats(true);
   };
 
+  const navigateToHome = () => {
+    tracks.forEach((track) => {
+      deleteTrack(track.id);
+    });
+
+    setTimeout(() => {
+      navigate("/home");
+    }, 50);
+  };
+
 
   return (
     <>
@@ -144,7 +154,7 @@ export default function Lesson2({ onLessonComplete }) {
 
       <div className="playground-header">
         <h2 className="pixel-font playground-header-title">Lesson 2</h2>
-        <button className="home-button" onClick={() => navigate("/home")}>Home</button>
+        <button className="home-button" onClick={navigateToHome}>Home</button>
       </div>
 
       <div className="playground-container">
@@ -287,7 +297,7 @@ export default function Lesson2({ onLessonComplete }) {
         <CongratsModal
           image={congratsImage}
           onClose={() => setShowCongrats(false)}
-          onReturnHome={() => navigate("/home")}
+          onReturnHome={navigateToHome}
         />
       )}
     </>

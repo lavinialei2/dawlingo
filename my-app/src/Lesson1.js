@@ -88,7 +88,16 @@ export default function Lesson1({ onLessonComplete }) {
     }
   }, [stepIndex]);
 
-  const navigateToHome = () => navigate("/home");
+  const navigateToHome = () => {
+    tracks.forEach((track) => {
+      deleteTrack(track.id);
+    });
+
+    setTimeout(() => {
+      navigate("/home");
+    }, 50);
+  };
+
 
   const handleLessonComplete = () => {
     const currentHighest = parseInt(localStorage.getItem("highestLessonCompleted") || "0");
@@ -229,7 +238,7 @@ export default function Lesson1({ onLessonComplete }) {
           <CongratsModal
             image={congratsImage}
             onClose={() => setShowCongrats(false)}
-            onReturnHome={() => setTimeout(() => navigate("/home"), 50)}
+            onReturnHome={navigateToHome}
           />
         )}
       </div>

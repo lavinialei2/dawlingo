@@ -152,7 +152,7 @@ const lessons = [
       },
       {
         title: "Progressions are very reused",
-        text: "You can definitely get creative and experiment with your progressions, but a most songs, particularly in pop, all reuse the same couple of chord progressions.",
+        text: "You can definitely get creative and experiment with your progressions, but most songs, particularly in pop, all reuse the same couple of chord progressions.",
         target: "none",
         hasArrow: false
       },
