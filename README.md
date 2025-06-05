@@ -2,6 +2,9 @@
 
 This project is now hosted on https://dawlingo.vercel.app/
 
+<img src="/DAWlingoPoster.png" width="1000">
+
+
 # Setting up on local machine
 
 First clone the repository using
